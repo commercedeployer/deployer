@@ -47,7 +47,7 @@ Proprietary stacks — JSON import in template editor, not in public catalog.
 |---|----------|-------------------|
 | Role | Containers by template | Traefik, registry, Deployer as service |
 | Entry | `npm start`, own Docker image | `setup-server-stack.sh` |
-| Image | `Dockerfile`, CI publish | `DEPLOYER_IMAGE` env |
+| Image | `Dockerfile`, CI → `commercedeployer/deployer` or `ghcr.io/commerce-deployer/deployer` | `DEPLOYER_IMAGE` env |
 
 ---
 

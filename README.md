@@ -49,14 +49,19 @@ docker run -d --name deployer --user root -p 3000:3000 \
   deployer:latest
 ```
 
-**Published images** (public, `docker pull` without login):
+Published images (public, no `docker login` for pull):
 
-| Registry | Image |
-|----------|--------|
-| Docker Hub | `docker.io/commercedeployer/deployer:latest` (also `:v1.2.0`, etc.) |
-| GHCR | `ghcr.io/commerce-deployer/deployer:latest` |
+| Registry | Image | Page |
+|----------|--------|------|
+| **Docker Hub** (default in stack docs) | `docker.io/commercedeployer/deployer:latest` | [hub.docker.com/r/commercedeployer/deployer](https://hub.docker.com/r/commercedeployer/deployer) |
+| **GHCR** | `ghcr.io/commerce-deployer/deployer:latest` | GitHub → Packages |
 
-Docker Hub namespace is [`commercedeployer`](https://hub.docker.com/r/commercedeployer/deployer) (no hyphens in Hub usernames; GitHub org stays `commerce-deployer`).
+```bash
+docker pull commercedeployer/deployer:latest
+# or: docker pull ghcr.io/commerce-deployer/deployer:latest
+```
+
+Pin a release tag (e.g. `:v1.2.0`) instead of `:latest` in production. Docker Hub namespace is `commercedeployer` (Hub usernames cannot contain hyphens); GHCR uses the GitHub org name `commerce-deployer`.
 
 ### Windows + Docker Desktop
 
@@ -119,12 +124,17 @@ Full run: `npm run test:all`.
 
 CI publishes on tag `v*` to **Docker Hub** and **GHCR** — [.github/workflows/publish-image.yml](.github/workflows/publish-image.yml).
 
+| Registry | Image | Notes |
+|----------|--------|--------|
+| Docker Hub | `docker.io/commercedeployer/deployer:latest` | Public; [hub.docker.com/r/commercedeployer/deployer](https://hub.docker.com/r/commercedeployer/deployer) |
+| GHCR | `ghcr.io/commerce-deployer/deployer:latest` | Public after package visibility in GitHub Packages |
+
 ```bash
-docker pull docker.io/commercedeployer/deployer:latest
-docker pull ghcr.io/commerce-deployer/deployer:latest
+docker pull commercedeployer/deployer:latest
+docker run --rm commercedeployer/deployer:latest node -e "console.log('ok')"
 ```
 
-Docker Hub secrets for CI: `DOCKERHUB_USERNAME` (`commercedeployer`), `DOCKERHUB_TOKEN`.
+Docker Hub CI needs secrets `DOCKERHUB_USERNAME` (`commercedeployer`) and `DOCKERHUB_TOKEN`. GHCR uses the built-in `GITHUB_TOKEN`.
 
 ---
 
