@@ -75,7 +75,7 @@ docker run -d --name deployer \
   --label "traefik.http.routers.deployer.tls=true" \
   --label "traefik.http.routers.deployer.tls.certresolver=le" \
   --label "traefik.http.services.deployer.loadbalancer.server.port=3000" \
-  docker.io/commerce-deployer/deployer:latest
+  docker.io/commercedeployer/deployer:latest
 ```
 
 Without Traefik: add `-p 3000:3000` and omit `--label` / `--network proxynet`.

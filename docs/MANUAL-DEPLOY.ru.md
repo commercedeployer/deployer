@@ -27,7 +27,7 @@ sudo chown -R 1000:1000 /opt/deployer/templates
 
 ## 5. Запуск
 
-`--user root` для docker.sock. Образ: `docker.io/commerce-deployer/deployer:latest`. Полная команда — в [MANUAL-DEPLOY.md](MANUAL-DEPLOY.md).
+`--user root` для docker.sock. Образ: `docker.io/commercedeployer/deployer:latest`. Полная команда — в [MANUAL-DEPLOY.md](MANUAL-DEPLOY.md).
 
 ## 6. Проверка
 

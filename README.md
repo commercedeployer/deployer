@@ -49,7 +49,14 @@ docker run -d --name deployer --user root -p 3000:3000 \
   deployer:latest
 ```
 
-Published images (after release): `docker.io/commerce-deployer/deployer:latest` and `ghcr.io/commerce-deployer/deployer:latest`.
+**Published images** (public, `docker pull` without login):
+
+| Registry | Image |
+|----------|--------|
+| Docker Hub | `docker.io/commercedeployer/deployer:latest` (also `:v1.2.0`, etc.) |
+| GHCR | `ghcr.io/commerce-deployer/deployer:latest` |
+
+Docker Hub namespace is [`commercedeployer`](https://hub.docker.com/r/commercedeployer/deployer) (no hyphens in Hub usernames; GitHub org stays `commerce-deployer`).
 
 ### Windows + Docker Desktop
 
@@ -110,9 +117,14 @@ Full run: `npm run test:all`.
 
 ## Container images
 
-Tag `v*` triggers CI publish to **GHCR** (always) and **Docker Hub** (optional) — see [.github/workflows/publish-image.yml](.github/workflows/publish-image.yml).
+CI publishes on tag `v*` to **Docker Hub** and **GHCR** — [.github/workflows/publish-image.yml](.github/workflows/publish-image.yml).
 
-GHCR needs no extra setup. For Docker Hub add secrets `DOCKERHUB_USERNAME` and `DOCKERHUB_TOKEN`; until then the Docker Hub job is skipped without blocking GHCR.
+```bash
+docker pull docker.io/commercedeployer/deployer:latest
+docker pull ghcr.io/commerce-deployer/deployer:latest
+```
+
+Docker Hub secrets for CI: `DOCKERHUB_USERNAME` (`commercedeployer`), `DOCKERHUB_TOKEN`.
 
 ---
 

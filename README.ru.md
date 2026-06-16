@@ -49,7 +49,14 @@ docker run -d --name deployer --user root -p 3000:3000 \
   deployer:latest
 ```
 
-Образы после релиза: `docker.io/commerce-deployer/deployer:latest` и `ghcr.io/commerce-deployer/deployer:latest`.
+**Опубликованные образы** (публичные, `docker pull` без логина):
+
+| Registry | Образ |
+|----------|--------|
+| Docker Hub | `docker.io/commercedeployer/deployer:latest` (и `:v1.2.0` и др.) |
+| GHCR | `ghcr.io/commerce-deployer/deployer:latest` |
+
+На Docker Hub — [`commercedeployer`](https://hub.docker.com/r/commercedeployer/deployer) (в username Hub нет дефисов; org на GitHub — `commerce-deployer`).
 
 ### docker compose
 
@@ -100,7 +107,14 @@ npm run test:ui
 
 ## Образы
 
-Тег `v*` публикует образ в **GHCR** (всегда) и **Docker Hub** (опционально). GHCR настраивать не нужно. Для Docker Hub — секреты `DOCKERHUB_USERNAME`, `DOCKERHUB_TOKEN`; без них job Docker Hub не блокирует GHCR.
+CI публикует по тегу `v*` в **Docker Hub** и **GHCR** — [.github/workflows/publish-image.yml](.github/workflows/publish-image.yml).
+
+```bash
+docker pull docker.io/commercedeployer/deployer:latest
+docker pull ghcr.io/commerce-deployer/deployer:latest
+```
+
+Секреты CI для Docker Hub: `DOCKERHUB_USERNAME` (`commercedeployer`), `DOCKERHUB_TOKEN`.
 
 ---
 
