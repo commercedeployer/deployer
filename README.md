@@ -1,13 +1,13 @@
 # Deployer
 
-[![CI](https://github.com/commerce-deployer/deployer/actions/workflows/ci.yml/badge.svg)](https://github.com/commerce-deployer/deployer/actions/workflows/ci.yml)
+[![CI](https://github.com/commercedeployer/deployer/actions/workflows/ci.yml/badge.svg)](https://github.com/commercedeployer/deployer/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 
 Web app for deploying Docker containers from JSON templates: admin UI, REST API, async operations. Manages **only** containers with the managed label (system and foreign containers are invisible).
 
 **Русский:** [README.ru.md](README.ru.md)
 
-VPS install (Traefik, registry, Deployer in one stack) — separate project [Setup Server Stack](https://github.com/commerce-deployer/setup-server-stack) (`setup-server-stack.sh`).
+VPS install (Traefik, registry, Deployer in one stack) — separate project [Setup Server Stack](https://github.com/commercedeployer/setup-server-stack) (`setup-server-stack.sh`).
 
 ---
 
@@ -54,14 +54,14 @@ Published images (public, no `docker login` for pull):
 | Registry | Image | Page |
 |----------|--------|------|
 | **Docker Hub** (default in stack docs) | `docker.io/commercedeployer/deployer:latest` | [hub.docker.com/r/commercedeployer/deployer](https://hub.docker.com/r/commercedeployer/deployer) |
-| **GHCR** | `ghcr.io/commerce-deployer/deployer:latest` | GitHub → Packages |
+| **GHCR** | `ghcr.io/commercedeployer/deployer:latest` | GitHub → Packages |
 
 ```bash
 docker pull commercedeployer/deployer:latest
-# or: docker pull ghcr.io/commerce-deployer/deployer:latest
+# or: docker pull ghcr.io/commercedeployer/deployer:latest
 ```
 
-Pin a release tag (e.g. `:v1.2.0`) instead of `:latest` in production. Docker Hub namespace is `commercedeployer` (Hub usernames cannot contain hyphens); GHCR uses the GitHub org name `commerce-deployer`.
+Pin a release tag (e.g. `:v1.2.0`) instead of `:latest` in production. Images are published under org `commercedeployer` on Docker Hub and GHCR.
 
 ### Windows + Docker Desktop
 
@@ -127,7 +127,7 @@ CI publishes on tag `v*` to **Docker Hub** and **GHCR** — [.github/workflows/p
 | Registry | Image | Notes |
 |----------|--------|--------|
 | Docker Hub | `docker.io/commercedeployer/deployer:latest` | Public; [hub.docker.com/r/commercedeployer/deployer](https://hub.docker.com/r/commercedeployer/deployer) |
-| GHCR | `ghcr.io/commerce-deployer/deployer:latest` | Public after package visibility in GitHub Packages |
+| GHCR | `ghcr.io/commercedeployer/deployer:latest` | Public after package visibility in GitHub Packages |
 
 ```bash
 docker pull commercedeployer/deployer:latest

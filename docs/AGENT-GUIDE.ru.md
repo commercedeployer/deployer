@@ -4,7 +4,7 @@
 
 Deployer — OSS-приложение для deploy Docker по JSON-шаблонам. Клиенты вызывают HTTP API.
 
-VPS с Traefik — **[Setup Server Stack](https://github.com/commerce-deployer/setup-server-stack)**.
+VPS с Traefik — **[Setup Server Stack](https://github.com/commercedeployer/setup-server-stack)**.
 
 ---
 

@@ -1,13 +1,13 @@
 # Deployer
 
-[![CI](https://github.com/commerce-deployer/deployer/actions/workflows/ci.yml/badge.svg)](https://github.com/commerce-deployer/deployer/actions/workflows/ci.yml)
+[![CI](https://github.com/commercedeployer/deployer/actions/workflows/ci.yml/badge.svg)](https://github.com/commercedeployer/deployer/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 
 Веб-приложение для развёртывания Docker-контейнеров по JSON-шаблонам: админка, REST API, async-операции. Управляет **только** контейнерами с managed-меткой (системные и чужие недоступны).
 
 **English:** [README.md](README.md)
 
-Установка на VPS (Traefik, registry, Deployer в одном стеке) — отдельный проект [Setup Server Stack](https://github.com/commerce-deployer/setup-server-stack) (`setup-server-stack.sh`).
+Установка на VPS (Traefik, registry, Deployer в одном стеке) — отдельный проект [Setup Server Stack](https://github.com/commercedeployer/setup-server-stack) (`setup-server-stack.sh`).
 
 ---
 
@@ -54,13 +54,13 @@ docker run -d --name deployer --user root -p 3000:3000 \
 | Registry | Образ | Страница |
 |----------|--------|----------|
 | **Docker Hub** (по умолчанию в stack) | `docker.io/commercedeployer/deployer:latest` | [hub.docker.com/r/commercedeployer/deployer](https://hub.docker.com/r/commercedeployer/deployer) |
-| **GHCR** | `ghcr.io/commerce-deployer/deployer:latest` | GitHub → Packages |
+| **GHCR** | `ghcr.io/commercedeployer/deployer:latest` | GitHub → Packages |
 
 ```bash
 docker pull commercedeployer/deployer:latest
 ```
 
-На Docker Hub namespace `commercedeployer` (в логине Hub нельзя дефис); на GHCR — org GitHub `commerce-deployer`.
+Образы публикуются под org `commercedeployer` на Docker Hub и GHCR.
 
 ### docker compose
 
@@ -116,7 +116,7 @@ CI публикует по тегу `v*` в **Docker Hub** и **GHCR** — [.git
 | Registry | Образ |
 |----------|--------|
 | Docker Hub | `docker.io/commercedeployer/deployer:latest` |
-| GHCR | `ghcr.io/commerce-deployer/deployer:latest` |
+| GHCR | `ghcr.io/commercedeployer/deployer:latest` |
 
 ```bash
 docker pull commercedeployer/deployer:latest

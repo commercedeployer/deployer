@@ -6,12 +6,12 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "https://github.com/commerce-deployer/deployer.git"
+    "url": "https://github.com/commercedeployer/deployer.git"
   },
   "bugs": {
-    "url": "https://github.com/commerce-deployer/deployer/issues"
+    "url": "https://github.com/commercedeployer/deployer/issues"
   },
-  "homepage": "https://github.com/commerce-deployer/deployer#readme",
+  "homepage": "https://github.com/commercedeployer/deployer#readme",
   "keywords": [
     "docker",
     "deploy",

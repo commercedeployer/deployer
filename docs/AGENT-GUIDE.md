@@ -4,7 +4,7 @@
 
 Deployer is an open-source app for deploying Docker containers from JSON templates. HTTP clients (billing panels, scripts) call the REST API.
 
-VPS install with Traefik — **[Setup Server Stack](https://github.com/commerce-deployer/setup-server-stack)** (sibling OSS project).
+VPS install with Traefik — **[Setup Server Stack](https://github.com/commercedeployer/setup-server-stack)** (sibling OSS project).
 
 ---
 
@@ -47,7 +47,7 @@ Proprietary stacks — JSON import in template editor, not in public catalog.
 |---|----------|-------------------|
 | Role | Containers by template | Traefik, registry, Deployer as service |
 | Entry | `npm start`, own Docker image | `setup-server-stack.sh` |
-| Image | `Dockerfile`, CI → `commercedeployer/deployer` or `ghcr.io/commerce-deployer/deployer` | `DEPLOYER_IMAGE` env |
+| Image | `Dockerfile`, CI → `commercedeployer/deployer` or `ghcr.io/commercedeployer/deployer` | `DEPLOYER_IMAGE` env |
 
 ---
 
