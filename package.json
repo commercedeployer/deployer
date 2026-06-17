@@ -26,8 +26,8 @@
     "test:ui": "node scripts/ui-smoke-playwright.js",
     "test:ui:e2e": "node scripts/ui-e2e-playwright.js",
     "test:ui:deploy": "node scripts/ui-deploy-smoke-playwright.js",
-    "test:integration": "node --test test/integration/",
-    "test:all": "node scripts/run-unit-tests.js && node --test test/integration/ && node scripts/ui-smoke-playwright.js && node scripts/ui-e2e-playwright.js && node scripts/ui-deploy-smoke-playwright.js",
+    "test:integration": "node scripts/run-integration-tests.js",
+    "test:all": "node scripts/run-unit-tests.js && node scripts/run-integration-tests.js && node scripts/ui-smoke-playwright.js && node scripts/ui-e2e-playwright.js && node scripts/ui-deploy-smoke-playwright.js",
     "restore-templates": "node scripts/restore-templates.js"
   },
   "engines": {

@@ -13,6 +13,7 @@ const { getFreePort } = require('./helpers/freePort');
 const { pollOperation, applyManifestParams, applyManifestContainerName } = require('./helpers/pollOperation');
 const { seedTemplatesDir, DEFAULT_SEED_DIR } = require('./helpers/seedTemplates');
 const { restoreIntegrationZeroState } = require('./helpers/cleanupIntegration');
+const { ensureHostPathWritable } = require('./helpers/ensureWritable');
 const { resetForTests } = require('../../server/operations');
 
 const API_KEY = 'integration-test-api-key';
@@ -296,7 +297,7 @@ describe('deployer docker integration', { concurrency: false }, () => {
     trackContainer(containerId);
 
     const dataDir = path.join(tmpBase, 'instances', containerName, 'data');
-    fs.mkdirSync(dataDir, { recursive: true });
+    ensureHostPathWritable(dataDir);
     const markerPath = path.join(dataDir, 'persist-marker.txt');
     fs.writeFileSync(markerPath, 'tier-change-keeps-data', 'utf8');
 
@@ -364,6 +365,7 @@ describe('deployer docker integration', { concurrency: false }, () => {
 
     const dataDir = path.join(tmpBase, 'instances', containerName, 'demo-data');
     fs.mkdirSync(dataDir, { recursive: true });
+    ensureHostPathWritable(dataDir);
     fs.writeFileSync(path.join(dataDir, 'tier.txt'), 'survives-plan-change', 'utf8');
 
     const deleteRes = await request(app)
