@@ -16,7 +16,7 @@
 | **Шаблоны** | SAFE_ID, path.join — без traversal по ID. |
 | **Удаление данных** | Только под DEPLOY_BASE_PATH. |
 | **Фронтенд** | escapeHtml/escapeAttr. |
-| **Dockerfile** | USER node. |
+| **Dockerfile** | Entrypoint ставит `DEPLOYER_SOFTWARE` от root; при смонтированном `docker.sock` процесс остаётся root (доступ к API), иначе `su-exec node`. |
 
 ---
 

@@ -51,6 +51,10 @@ function countQueued() {
   return n;
 }
 
+function getRunningCount() {
+  return runningCount;
+}
+
 function sweepTerminal() {
   const cutoff = Date.now() - TTL_MS;
   for (const [id, op] of operations) {
@@ -95,9 +99,10 @@ async function runOperation(op) {
     op.error = null;
   } catch (err) {
     op.status = 'failed';
-    op.phase = 'failed';
+    op.phase = err?.phase || 'failed';
     op.error = err?.message || String(err);
     op.result = null;
+    if (err?.statusCode) op.httpStatus = err.statusCode;
   }
   op.finishedAt = nowIso();
   op.updatedAt = op.finishedAt;
@@ -190,6 +195,8 @@ module.exports = {
   publicOperation,
   isActive,
   isTerminal,
+  countQueued,
+  getRunningCount,
   resetForTests,
   MAX_CONCURRENT,
   MAX_QUEUED,

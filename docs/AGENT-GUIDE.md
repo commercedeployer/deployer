@@ -24,6 +24,7 @@ VPS install with Traefik — **[Setup Server Stack](https://github.com/commerced
 | `docker-demo-free` / `basic` / `pro` | Demo tiers |
 | `integration-smoke` | Integration tests |
 | `docker-getting-started` | Smoke without tier |
+| `umami-pg` | Umami + shared Postgres; `postStart` seeds admin login |
 | `mariadb` | Database |
 | `wordpress` | WordPress, `DB_HOST` in form |
 

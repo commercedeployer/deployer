@@ -1,16 +1,23 @@
 /**
  * Load templates from JSON files. Substitute {{KEY}} placeholders from params.
- * If work dir is empty (e.g. -v host:/app/templates mount), copy from templates-default.
+ * If work dir is empty (e.g. -v host:/app/templates mount), seed from bundled templates inside the image.
  */
 const fs = require('fs');
 const path = require('path');
+const bcrypt = require('bcryptjs');
 const { createGenCache, isGenToken, resolveGenToken } = require('./genTokens');
 const { normalizeRestartPolicy, normalizeRestartMaxRetries } = require('./restartPolicy');
 const { normalizeVolumeEntry } = require('./volumes');
 const { normalizeNetworkEntry } = require('./networks');
+const { deployHostContext } = require('./hostContext');
 
 const TEMPLATES_DIR = process.env.TEMPLATES_DIR || path.join(__dirname, '..', 'templates');
-const TEMPLATES_DEFAULT_DIR = process.env.TEMPLATES_DEFAULT_DIR || path.join(__dirname, '..', 'templates-default');
+// Bundled templates live inside the image. During migration we keep backward compatibility:
+// - `TEMPLATES_BUNDLED_DIR` (new)
+// - `TEMPLATES_DEFAULT_DIR` (old env used in tests)
+const TEMPLATES_BUNDLED_DIR = process.env.TEMPLATES_BUNDLED_DIR
+  || process.env.TEMPLATES_DEFAULT_DIR
+  || path.join(__dirname, '..', 'templates-bundled');
 
 const SAFE_ID = /^[a-zA-Z0-9_-]+$/;
 const TEST_TEMPLATE_ID = /^(api-test-tpl-|test-template-id-)/;
@@ -21,9 +28,9 @@ function listTemplateJsonFiles(dir) {
 }
 
 /** Copy bundled defaults into work directory (full restore). */
-function syncTemplatesFromDefault(targetDir = TEMPLATES_DIR, sourceDir = TEMPLATES_DEFAULT_DIR) {
+function syncTemplatesFromDefault(targetDir = TEMPLATES_DIR, sourceDir = TEMPLATES_BUNDLED_DIR) {
   if (!fs.existsSync(sourceDir)) {
-    throw new Error(`templates-default missing: ${sourceDir}`);
+    throw new Error(`templates bundled missing: ${sourceDir}`);
   }
   fs.mkdirSync(targetDir, { recursive: true });
   const copied = [];
@@ -47,7 +54,7 @@ function resolveDeployerTemplatesDir() {
     || path.join(__dirname, '..', 'templates');
 }
 
-/** Restore dev catalog from templates-default (same as empty dir on startup). */
+/** Restore dev catalog from bundled templates (same as empty dir on startup). */
 function restoreDeployerTemplatesZeroState(targetDir = resolveDeployerTemplatesDir()) {
   return syncTemplatesFromDefault(targetDir);
 }
@@ -56,8 +63,8 @@ function restoreDeployerTemplatesZeroState(targetDir = resolveDeployerTemplatesD
 function ensureDefaultTemplates() {
   const list = loadTemplatesNoInit();
   if (list.length > 0) return { copied: 0, failed: [] };
-  if (!fs.existsSync(TEMPLATES_DEFAULT_DIR)) return { copied: 0, failed: [] };
-  const defaultFiles = fs.readdirSync(TEMPLATES_DEFAULT_DIR).filter((f) => f.endsWith('.json'));
+  if (!fs.existsSync(TEMPLATES_BUNDLED_DIR)) return { copied: 0, failed: [] };
+  const defaultFiles = fs.readdirSync(TEMPLATES_BUNDLED_DIR).filter((f) => f.endsWith('.json'));
   if (defaultFiles.length === 0) return { copied: 0, failed: [] };
   if (!fs.existsSync(TEMPLATES_DIR)) {
     try {
@@ -71,7 +78,7 @@ function ensureDefaultTemplates() {
   const failed = [];
   for (const f of defaultFiles) {
     try {
-      const src = path.join(TEMPLATES_DEFAULT_DIR, f);
+      const src = path.join(TEMPLATES_BUNDLED_DIR, f);
       const dest = path.join(TEMPLATES_DIR, f);
       fs.copyFileSync(src, dest);
       copied++;
@@ -154,6 +161,9 @@ function saveTemplate(template) {
     limits: normalized.limits && typeof normalized.limits === 'object' ? normalized.limits : {},
     dockerParams: Array.isArray(normalized.dockerParams) ? normalized.dockerParams : [],
   };
+  if (normalized.provision != null) out.provision = normalized.provision;
+  if (normalized.deprovision != null) out.deprovision = normalized.deprovision;
+  if (normalized.postStart != null) out.postStart = normalized.postStart;
   fs.writeFileSync(file, JSON.stringify(out, null, 2), 'utf8');
   return out;
 }
@@ -189,10 +199,20 @@ function substitute(str, params, context = {}) {
     }
     return null;
   };
+  const resolveToken = (rawKey) => {
+    const trimmed = String(rawKey).trim();
+    if (trimmed.startsWith('BCRYPT:')) {
+      const paramKey = trimmed.slice('BCRYPT:'.length).trim();
+      const plain = lookup(paramKey);
+      if (plain === null || plain === '') return null;
+      return bcrypt.hashSync(plain, 10);
+    }
+    return lookup(trimmed);
+  };
   let out = str;
   for (let pass = 0; pass < 4; pass += 1) {
     const next = out.replace(/\{\{([^}]+)\}\}/g, (_, key) => {
-      const value = lookup(key);
+      const value = resolveToken(key);
       return value === null ? `{{${key}}}` : value;
     });
     if (next === out) break;
@@ -383,8 +403,9 @@ function applyParams(template, params, context = {}) {
   if (!containerNameRaw) throw new Error('containerName required');
   const { normalizeDockerContainerName } = require('./deployIdentity');
   const dockerName = normalizeDockerContainerName(containerNameRaw);
+  const hostCtx = deployHostContext();
   const filled = fillDefaults(normalized, params, ctx);
-  const subs = { ...ctx, ...filled, CONTAINER_NAME: dockerName };
+  const subs = { ...hostCtx, ...ctx, ...filled, CONTAINER_NAME: dockerName };
   const env = (normalized.env || []).map((e) => ({
     name: typeof e === 'string' ? e : e.name,
     value: substitute(typeof e === 'string' ? '' : (e.value ?? ''), subs, ctx),
@@ -475,5 +496,7 @@ module.exports = {
   listTemplateJsonFiles,
   syncTemplatesFromDefault,
   restoreDeployerTemplatesZeroState,
-  TEMPLATES_DEFAULT_DIR,
+  TEMPLATES_BUNDLED_DIR,
+  // Backward compatibility for existing tests/scripts.
+  TEMPLATES_DEFAULT_DIR: TEMPLATES_BUNDLED_DIR,
 };

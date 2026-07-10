@@ -1,0 +1,82 @@
+{
+  "id": "umami-pg",
+  "name": "Umami (shared Postgres)",
+  "description": "Umami analytics on shared Postgres. Provision: tenant role+DB via psql inside Deployer container (POSTGRES_ADMIN_URL from stack).",
+  "image": "ghcr.io/umami-software/umami:postgresql-latest",
+  "pullPolicy": "ifNotPresent",
+  "restartPolicy": "unless-stopped",
+  "waitHealthy": true,
+  "waitHealthyTimeoutSec": 180,
+  "fields": [
+    {
+      "key": "HOST_PORT",
+      "label": "Host port",
+      "required": true,
+      "default": "3101"
+    },
+    {
+      "key": "APP_SECRET",
+      "label": "Umami APP_SECRET",
+      "type": "password",
+      "required": true
+    },
+    {
+      "key": "DEFAULT_ADMIN_USERNAME",
+      "label": "Umami admin username",
+      "required": true,
+      "default": "admin"
+    },
+    {
+      "key": "DEFAULT_ADMIN_PASSWORD",
+      "label": "Umami admin password",
+      "type": "password",
+      "required": true
+    }
+  ],
+  "provision": {
+    "command": "bash",
+    "args": [
+      "-c",
+      "psql \"$POSTGRES_ADMIN_URL\" -v ON_ERROR_STOP=1 -c \"DO \\$\\$ BEGIN CREATE ROLE \\\"$TENANT\\\" LOGIN PASSWORD '$TENANT'; EXCEPTION WHEN duplicate_object THEN NULL; END \\$\\$;\" && { psql \"$POSTGRES_ADMIN_URL\" -tAc \"SELECT 1 FROM pg_database WHERE datname='$TENANT'\" | grep -q 1 || psql \"$POSTGRES_ADMIN_URL\" -v ON_ERROR_STOP=1 -c \"CREATE DATABASE \\\"$TENANT\\\" OWNER \\\"$TENANT\\\"\"; } && printf '%s\\n' \"{\\\"DB_USER\\\":\\\"$TENANT\\\",\\\"DB_PASSWORD\\\":\\\"$TENANT\\\",\\\"DATABASE_URL\\\":\\\"postgresql://$TENANT:$TENANT@$POSTGRES_HOST:5432/$TENANT\\\"}\""
+    ],
+    "env": {
+      "POSTGRES_ADMIN_URL": "{{POSTGRES_ADMIN_URL}}",
+      "POSTGRES_HOST": "{{POSTGRES_HOST}}",
+      "TENANT": "{{CONTAINER_NAME}}"
+    },
+    "expect": ["DB_USER", "DB_PASSWORD", "DATABASE_URL"]
+  },
+  "deprovision": {
+    "command": "bash",
+    "args": [
+      "-c",
+      "psql \"$POSTGRES_ADMIN_URL\" -v ON_ERROR_STOP=1 -c \"DROP DATABASE IF EXISTS \\\"$TENANT\\\"\" -c \"DROP ROLE IF EXISTS \\\"$TENANT\\\"\""
+    ],
+    "env": {
+      "POSTGRES_ADMIN_URL": "{{POSTGRES_ADMIN_URL}}",
+      "TENANT": "{{CONTAINER_NAME}}"
+    },
+    "expect": []
+  },
+  "env": [
+    { "name": "DATABASE_URL", "value": "{{DATABASE_URL}}" },
+    { "name": "APP_SECRET", "value": "{{APP_SECRET}}" },
+    { "name": "DEFAULT_ADMIN_USERNAME", "value": "{{DEFAULT_ADMIN_USERNAME}}" },
+    { "name": "DEFAULT_ADMIN_PASSWORD", "value": "{{DEFAULT_ADMIN_PASSWORD}}" },
+    { "name": "NODE_ENV", "value": "production" }
+  ],
+  "volumes": [],
+  "networks": ["{{SHARED_APP_NETWORK}}"],
+  "ports": [
+    { "containerPort": 3000, "hostPort": "{{HOST_PORT}}", "protocol": "tcp" }
+  ],
+  "postStart": {
+    "command": "node",
+    "args": ["server/umamiAdminSeed.js"],
+    "env": {
+      "DATABASE_URL": "postgresql://{{CONTAINER_NAME}}:{{CONTAINER_NAME}}@{{POSTGRES_HOST}}:5432/{{CONTAINER_NAME}}",
+      "DEFAULT_ADMIN_USERNAME": "{{DEFAULT_ADMIN_USERNAME}}",
+      "DEFAULT_ADMIN_PASSWORD": "{{DEFAULT_ADMIN_PASSWORD}}"
+    }
+  }
+}

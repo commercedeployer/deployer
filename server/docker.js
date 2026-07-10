@@ -7,7 +7,7 @@ const path = require('path');
 const { Writable } = require('stream');
 const Docker = require('dockerode');
 const { authconfigForRegistryPull } = require('./registry-auth');
-const { INSTANCE_LABEL } = require('./deployIdentity');
+const { INSTANCE_LABEL, TEMPLATE_LABEL, normalizeDockerContainerName } = require('./deployIdentity');
 const { toDockerRestartPolicy } = require('./restartPolicy');
 const { applyContainerRuntimeSpec } = require('./dockerSpec');
 const { validateVolumePaths, applyVolumesToHostConfig, bindHostPaths } = require('./volumes');
@@ -43,6 +43,58 @@ function validateVolumePathsForSpec(volumes) {
 function hasManagedLabel(containerInspect) {
   const labels = containerInspect.Config?.Labels || {};
   return labels[MANAGED_LABEL] === MANAGED_LABEL_VALUE;
+}
+
+/** Shared Docker socket: container may carry another replica's managed-by label but same deploy identity. */
+async function findContainerInspectByDeployIdentity(idOrName) {
+  const wanted = String(idOrName || '').trim().replace(/^\//, '');
+  if (!wanted) return null;
+  let normalized = wanted;
+  try {
+    normalized = normalizeDockerContainerName(wanted);
+  } catch {
+    // keep wanted
+  }
+  const list = await docker.listContainers({ all: true });
+  for (const row of list) {
+    const name = (row.Names || [])[0]?.replace(/^\//, '') || '';
+    const labels = row.Labels || {};
+    const deployName = String(labels[INSTANCE_LABEL] || '').trim();
+    const match =
+      name === wanted ||
+      name === normalized ||
+      deployName === wanted ||
+      deployName === normalized;
+    if (!match || !deployName) continue;
+    try {
+      return await docker.getContainer(row.Id).inspect();
+    } catch {
+      continue;
+    }
+  }
+  return null;
+}
+
+function isManagedOrSharedPoolContainer(containerInspect, idOrName) {
+  if (!containerInspect) return false;
+  if (hasManagedLabel(containerInspect)) return true;
+  const labels = containerInspect.Config?.Labels || {};
+  const deployName = String(labels[INSTANCE_LABEL] || '').trim();
+  if (!deployName) return false;
+  const wanted = String(idOrName || '').trim().replace(/^\//, '');
+  let normalized = wanted;
+  try {
+    normalized = normalizeDockerContainerName(wanted);
+  } catch {
+    // keep wanted
+  }
+  const name = containerInspect.Name?.replace(/^\//, '') || '';
+  return (
+    name === wanted ||
+    name === normalized ||
+    deployName === wanted ||
+    deployName === normalized
+  );
 }
 
 async function getContainerCount() {
@@ -169,6 +221,8 @@ async function createAndStart(spec, hooks = {}) {
   applyNetworksToCreateOpts(createOpts, hostConfig, spec.networks, spec.network);
   const deployName = typeof hooks.deployName === 'string' ? hooks.deployName.trim() : '';
   if (deployName) createOpts.Labels[INSTANCE_LABEL] = deployName;
+  const templateId = typeof hooks.templateId === 'string' ? hooks.templateId.trim() : '';
+  if (templateId) createOpts.Labels[TEMPLATE_LABEL] = templateId;
 
   function portProtocol(p) {
     const proto = String(p.protocol || 'tcp').trim().toLowerCase();
@@ -220,6 +274,28 @@ async function createAndStart(spec, hooks = {}) {
       state: inspected.State?.Status,
     };
   } catch (err) {
+    const identity = deployName || spec.name;
+    if (err.statusCode === 409 && identity) {
+      const existing = await findContainerInspectByDeployIdentity(identity);
+      if (existing) {
+        onPhase('adopting_existing_container', 'Container already exists, adopting');
+        const adopted = docker.getContainer(existing.Id);
+        const state = existing.State?.Status;
+        if (state !== 'running') {
+          onPhase('starting_container', 'Starting container');
+          await adopted.start();
+        }
+        if (spec.waitHealthy) {
+          await waitForHealthy(adopted, spec.waitHealthyTimeoutSec, onPhase);
+        }
+        const inspected = await adopted.inspect();
+        return {
+          id: inspected.Id,
+          name: inspected.Name.replace(/^\//, ''),
+          state: inspected.State?.Status,
+        };
+      }
+    }
     if (container) {
       try {
         await container.remove({ force: true });
@@ -240,6 +316,7 @@ async function listContainers(all = false) {
     image: c.Image,
     state: c.State,
     deployName: (c.Labels || {})[INSTANCE_LABEL] || '',
+    templateId: (c.Labels || {})[TEMPLATE_LABEL] || '',
   }));
 }
 
@@ -248,12 +325,24 @@ async function getContainer(idOrName) {
   try {
     container = await docker.getContainer(idOrName).inspect();
   } catch {
-    const list = await docker.listContainers({ all: true });
-    const byName = list.find((c) => (c.Names || []).some((n) => n.replace(/^\//, '') === idOrName));
-    if (byName) container = await docker.getContainer(byName.Id).inspect();
+    container = await findContainerInspectByDeployIdentity(idOrName);
   }
-  if (container && !hasManagedLabel(container)) return null;
+  if (container && !isManagedOrSharedPoolContainer(container, idOrName)) return null;
   return container;
+}
+
+function removeDeployDataDir(containerName) {
+  let name;
+  try {
+    name = normalizeDockerContainerName(containerName);
+  } catch {
+    return [];
+  }
+  const dir = path.resolve(DEPLOY_BASE_PATH_RESOLVED, name);
+  if (!isPathUnderBase(dir)) return [];
+  if (!fs.existsSync(dir)) return [];
+  fs.rmSync(dir, { recursive: true, force: true });
+  return [dir];
 }
 
 function removeContainerData(containerInspect) {
@@ -277,9 +366,18 @@ function removeContainerData(containerInspect) {
 
 async function stopAndRemoveContainer(idOrName, removeData = false, hooks = {}) {
   const onPhase = typeof hooks.onPhase === 'function' ? hooks.onPhase : () => {};
-  onPhase('stopping_container', 'Stopping container');
   const container = await getContainer(idOrName);
-  if (!container) return { removed: false, dataRemoved: [] };
+  if (!container) {
+    let dataRemoved = [];
+    if (removeData) {
+      onPhase('removing_data', 'Removing container data');
+      const purgeId = hooks.deployId || idOrName;
+      dataRemoved = removeDeployDataDir(purgeId);
+    }
+    onPhase('succeeded', removeData ? 'Data removed' : 'Already removed');
+    return { removed: false, alreadyGone: true, dataRemoved };
+  }
+  onPhase('stopping_container', 'Stopping container');
   const id = container.Id;
   const c = docker.getContainer(id);
   try {
@@ -291,11 +389,14 @@ async function stopAndRemoveContainer(idOrName, removeData = false, hooks = {}) 
   if (removeData) {
     onPhase('removing_data', 'Removing container data');
     dataRemoved = removeContainerData(container);
+    const deployName = (container.Config?.Labels || {})[INSTANCE_LABEL] || idOrName;
+    const fromDir = removeDeployDataDir(deployName);
+    dataRemoved = [...new Set([...dataRemoved, ...fromDir])];
   }
   onPhase('removing_container', 'Removing container');
   await c.remove({ force: true });
   onPhase('succeeded', 'Container removed');
-  return { removed: true, dataRemoved };
+  return { removed: true, alreadyGone: false, dataRemoved };
 }
 
 function readStatsFrames(stream, count = 2) {
@@ -576,6 +677,48 @@ async function getContainerLogs(idOrName, { tail = 500, timestamps = false } = {
   };
 }
 
+async function deleteManagedContainer(idOrName, removeData = false, hooks = {}) {
+  const onPhase = typeof hooks.onPhase === 'function' ? hooks.onPhase : () => {};
+  const { getTemplateById } = require('./templates');
+  const {
+    runProvisionBlock,
+    resolveDeleteTemplateId,
+    resolveDeployIdentifier,
+  } = require('./provisionRunner');
+  const container = await getContainer(idOrName);
+  const deployId = resolveDeployIdentifier(idOrName, container);
+  let deprovisionWarning = null;
+
+  if (removeData) {
+    const templateId = resolveDeleteTemplateId(hooks.templateId, container);
+    if (templateId) {
+      const template = getTemplateById(templateId);
+      if (!template) {
+        const err = new Error('Template not found');
+        err.statusCode = 404;
+        throw err;
+      }
+      if (template.deprovision) {
+        onPhase('deprovisioning', 'Running deprovision');
+        try {
+          await runProvisionBlock(
+            template.deprovision,
+            { containerName: deployId, params: {}, deployBasePath: DEPLOY_BASE_PATH },
+            { onPhase, failPhase: 'deprovision_failed' },
+          );
+        } catch (err) {
+          deprovisionWarning = err?.message || 'deprovision_failed';
+          onPhase('deprovision_warning', deprovisionWarning);
+        }
+      }
+    }
+  }
+
+  const result = await stopAndRemoveContainer(idOrName, removeData, { onPhase, deployId });
+  if (deprovisionWarning) result.deprovisionWarning = deprovisionWarning;
+  return result;
+}
+
 module.exports = {
   createAndStart,
   listContainers,
@@ -584,7 +727,9 @@ module.exports = {
   getContainerStats,
   getContainerDiskUsage,
   getContainerLogs,
+  removeDeployDataDir,
   stopAndRemoveContainer,
+  deleteManagedContainer,
   restartContainer,
   stopContainer,
   startContainer,

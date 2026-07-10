@@ -1,7 +1,7 @@
 {
   "id": "mariadb",
   "name": "MariaDB",
-  "description": "MariaDB 11. Container name at deploy. Data: DEPLOY_BASE_PATH/instances/{{CONTAINER_NAME}}/data.",
+  "description": "MariaDB 11. Container name at deploy. Data: DEPLOY_BASE_PATH/{{CONTAINER_NAME}}/data.",
   "image": "mariadb:11",
   "pullPolicy": "ifNotPresent",
   "fields": [
@@ -43,7 +43,7 @@
     { "name": "MARIADB_ROOT_PASSWORD", "value": "{{MARIADB_ROOT_PASSWORD}}" }
   ],
   "volumes": [
-    { "host": "{{DEPLOY_BASE_PATH}}/instances/{{CONTAINER_NAME}}/data", "container": "/var/lib/mysql" }
+    { "host": "{{DEPLOY_BASE_PATH}}/{{CONTAINER_NAME}}/data", "container": "/var/lib/mysql" }
   ],
   "labels": [],
   "networks": [],

@@ -34,6 +34,11 @@ describe('templates', () => {
     it('returns non-string as-is', () => {
       assert.strictEqual(templates.substitute(null, {}), null);
     });
+    it('hashes password with BCRYPT token', () => {
+      const hash = templates.substitute('{{BCRYPT:PASS}}', { PASS: 'secret123' });
+      assert.match(hash, /^\$2[aby]\$/);
+      assert.ok(require('bcryptjs').compareSync('secret123', hash));
+    });
   });
 
   describe('fillDefaults', () => {

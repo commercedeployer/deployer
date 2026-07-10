@@ -110,4 +110,5 @@ module.exports = {
   hasApiKeyConfigured,
   getDeployAuthMode,
   DEPLOY_AUTH_MODE,
+  hasValidSession,
 };

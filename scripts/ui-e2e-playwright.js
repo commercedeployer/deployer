@@ -81,7 +81,7 @@ async function assertNoPageErrors(page, label) {
     pass('template editor loaded');
 
     step(5, 'Import JSON file and fill form');
-    const samplePath = path.join(__dirname, '..', 'templates-default', 'docker-getting-started.json');
+    const samplePath = path.join(__dirname, '..', 'templates-bundled', 'docker-getting-started.json');
     const sample = JSON.parse(fs.readFileSync(samplePath, 'utf8'));
     sample.id = TEST_TPL_ID;
     sample.name = `QA Manual ${TEST_TPL_ID}`;

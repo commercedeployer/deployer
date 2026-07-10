@@ -73,11 +73,25 @@ Mutations are async → **202** + `operationId`:
 | Start | `POST /api/containers/:id/start` |
 | Stop | `POST /api/containers/:id/stop` |
 | Restart | `POST /api/containers/:id/restart` |
-| Delete | `DELETE /api/containers/:id?removeData=false` |
+| Delete | `DELETE /api/containers/:id?removeData=false&templateId=…` |
 
-`removeData=true` deletes directories **only** under `DEPLOY_BASE_PATH`.
+`removeData=true` deletes host data under `DEPLOY_BASE_PATH/<identifier>/`. Template for `deprovision`: `templateId` query → else `deployer.templateId` label. If neither — disk only. Container gone + `removeData=true` → 202, purge by identifier.
+
+`removeData=false` removes only the container; volumes and DB objects from provision remain.
+
+See [PROVISION-v1-RU.md](PROVISION-v1-RU.md).
 
 List response: `containers[]`, `total`, `page`, `total_pages`, `has_more`, `container_limit`.
+
+## Capacity (placement)
+
+`GET /api/capacity` — physical node snapshot for Commerce placement:
+
+- `total_containers` — managed containers in Docker (Commerce uses as `docker_containers`)
+- `container_limit` — `CONTAINER_LIMIT` env on this deployer
+- `free_slots` — deployer-side remainder (`container_limit − total_containers`); Commerce computes **headroom** separately (parked instances, pending deploys)
+
+Commerce combines this with license counts (`entitled`) from its database; see Commerce `DEPLOYER-PLACEMENT-AND-VOLUMES-v1-RU.md`.
 
 ## Managed containers
 
@@ -87,6 +101,13 @@ Deployer sees only containers with label:
 - `MANAGED_LABEL_VALUE` (default: `deployer`)
 
 Label is set on create. Multiple Deployer instances on one host — different `MANAGED_LABEL_VALUE`.
+
+On every deploy, Deployer also sets:
+
+- `deployer.containerName` — from API `containerName`;
+- `deployer.templateId` — from API `templateId` (used for deprovision when `removeData=true`).
+
+See [PROVISION-v1-RU.md](PROVISION-v1-RU.md).
 
 ## Templates
 

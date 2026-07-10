@@ -8,14 +8,14 @@ const assert = require('node:assert');
 const request = require('supertest');
 
 const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'deployer-import-'));
-const defaultDir = path.join(__dirname, '..', 'templates-default');
+const bundledDir = path.join(__dirname, '..', 'templates-bundled');
 
 process.env.NODE_ENV = 'test';
 process.env.ADMIN_USER = 'importtest';
 process.env.ADMIN_PASSWORD = 'importpass123';
 process.env.SESSION_SECRET = 'import-test-secret';
 process.env.TEMPLATES_DIR = tmpDir;
-process.env.TEMPLATES_DEFAULT_DIR = defaultDir;
+process.env.TEMPLATES_BUNDLED_DIR = bundledDir;
 
 const templates = require('../server/templates');
 
@@ -24,7 +24,7 @@ describe('template import and default seed', () => {
   let cookie = '';
 
   before(async () => {
-    templates.syncTemplatesFromDefault(tmpDir, defaultDir);
+    templates.syncTemplatesFromDefault(tmpDir, bundledDir);
     app = require('../server/index.js');
     const login = await request(app)
       .post('/api/login')
@@ -36,7 +36,7 @@ describe('template import and default seed', () => {
     try { fs.rmSync(tmpDir, { recursive: true, force: true }); } catch (_) {}
   });
 
-  it('ensureDefaultTemplates seeds empty work dir from templates-default', () => {
+  it('ensureDefaultTemplates seeds empty work dir from bundled templates', () => {
     const empty = fs.mkdtempSync(path.join(os.tmpdir(), 'deployer-seed-'));
     try {
       const prev = process.env.TEMPLATES_DIR;
@@ -59,13 +59,13 @@ describe('template import and default seed', () => {
       fs.rmSync(path.join(tmpDir, file), { force: true });
     }
     assert.strictEqual(templates.listTemplateJsonFiles(tmpDir).length, 0);
-    const result = templates.syncTemplatesFromDefault(tmpDir, defaultDir);
+    const result = templates.syncTemplatesFromDefault(tmpDir, bundledDir);
     assert.ok(result.copied.length >= 7);
     assert.ok(templates.loadTemplates().length >= 7);
   });
 
   it('DELETE all via API then GET reloads bundled defaults', async () => {
-    templates.syncTemplatesFromDefault(tmpDir, defaultDir);
+    templates.syncTemplatesFromDefault(tmpDir, bundledDir);
     const before = await request(app).get('/api/templates').set('Cookie', cookie);
     assert.ok(before.body.length >= 7);
 
@@ -82,7 +82,7 @@ describe('template import and default seed', () => {
   });
 
   it('POST import saves template after delete (editor import path)', async () => {
-    const samplePath = path.join(defaultDir, 'docker-demo-free.json');
+    const samplePath = path.join(bundledDir, 'docker-demo-free.json');
     const sample = JSON.parse(fs.readFileSync(samplePath, 'utf8'));
 
     await request(app).delete('/api/templates/docker-demo-free').set('Cookie', cookie);

@@ -42,7 +42,7 @@ function setupIntegrationEnv() {
 
   process.env.NODE_ENV = 'test';
   process.env.TEMPLATES_DIR = templatesTmp;
-  process.env.TEMPLATES_DEFAULT_DIR = DEFAULT_SEED_DIR;
+  process.env.TEMPLATES_BUNDLED_DIR = DEFAULT_SEED_DIR;
   process.env.DEPLOY_BASE_PATH = tmpBase;
   process.env.API_KEY = API_KEY;
   process.env.DEPLOYER_AUTH_MODE = 'api';
@@ -85,7 +85,7 @@ describe('deployer docker integration', { concurrency: false }, () => {
     }
   });
 
-  it('manifest templates exist in bundled templates-default', () => {
+  it('manifest templates exist in bundled templates', () => {
     for (const entry of Object.values(manifest.templates)) {
       const filePath = path.join(DEFAULT_SEED_DIR, entry.file);
       assert.ok(fs.existsSync(filePath), `missing bundled template ${entry.file}`);
@@ -125,6 +125,8 @@ describe('deployer docker integration', { concurrency: false }, () => {
       .set('X-API-Key', API_KEY);
     assert.strictEqual(getRes.status, 200);
     assert.strictEqual(getRes.body.state, 'running');
+    assert.strictEqual(getRes.body.templateId, 'integration-smoke');
+    assert.strictEqual(getRes.body.deployName, containerName);
 
     const stopOp = await pollOperation(
       (id) => request(app).get(`/api/operations/${id}`).set('X-API-Key', API_KEY).then((r) => r.body),

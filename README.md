@@ -65,7 +65,7 @@ docker pull commercedeployer/deployer:latest
 # or: docker pull ghcr.io/commercedeployer/deployer:latest
 ```
 
-Pin a release tag (e.g. `:v1.2.0`) instead of `:latest` in production. Images are published under org `commercedeployer` on Docker Hub and GHCR.
+Pin a release tag (e.g. `:v2.0.0`) instead of `:latest` in production. Images are published under org `commercedeployer` on Docker Hub and GHCR.
 
 ### Windows + Docker Desktop
 

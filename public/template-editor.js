@@ -303,10 +303,189 @@ function collectDockerParams() {
   }).filter(Boolean);
 }
 
+function normalizeStepForEditor(step) {
+  const s = step && typeof step === 'object' ? step : {};
+  const envObj = s.env && typeof s.env === 'object' && !Array.isArray(s.env) ? s.env : {};
+  return {
+    command: String(s.command || ''),
+    args: Array.isArray(s.args) ? s.args.map(String) : [],
+    env: Object.entries(envObj).map(([name, value]) => ({ name, value: String(value ?? '') })),
+    expect: Array.isArray(s.expect) ? s.expect.map(String) : [],
+  };
+}
+
+function normalizeStepsForEditor(raw) {
+  if (raw == null) return [];
+  if (Array.isArray(raw)) return raw.map(normalizeStepForEditor);
+  if (typeof raw === 'object') return [normalizeStepForEditor(raw)];
+  return [];
+}
+
+function packProvisionSteps(steps) {
+  const packed = (steps || []).map((step) => {
+    const command = String(step.command || '').trim();
+    if (!command) return null;
+    const out = { command };
+    const args = (step.args || []).map((a) => String(a).trim()).filter(Boolean);
+    if (args.length) out.args = args;
+    const envRows = (step.env || []).filter((e) => e.name);
+    if (envRows.length) {
+      out.env = {};
+      envRows.forEach((e) => {
+        out.env[e.name] = e.value ?? '';
+      });
+    }
+    const expect = (step.expect || []).map((k) => String(k).trim()).filter(Boolean);
+    if (expect.length) out.expect = expect;
+    return out;
+  }).filter(Boolean);
+  if (!packed.length) return null;
+  if (packed.length === 1) return packed[0];
+  return packed;
+}
+
+function collectStepsFromList(listId) {
+  const cards = document.querySelectorAll(`#${listId} .provision-step-card`);
+  return Array.from(cards).map((card) => {
+    const command = card.querySelector('[data-key="command"]')?.value?.trim() || '';
+    const args = Array.from(card.querySelectorAll('.provision-args-list .repeat-row'))
+      .map((row) => row.querySelector('[data-key="arg"]')?.value?.trim() || '')
+      .filter(Boolean);
+    const env = Array.from(card.querySelectorAll('.provision-env-list .repeat-row'))
+      .map((row) => ({
+        name: row.querySelector('[data-key="name"]')?.value?.trim() || '',
+        value: row.querySelector('[data-key="value"]')?.value?.trim() || '',
+      }))
+      .filter((e) => e.name);
+    const expect = Array.from(card.querySelectorAll('.provision-expect-list .repeat-row'))
+      .map((row) => row.querySelector('[data-key="expect"]')?.value?.trim() || '')
+      .filter(Boolean);
+    return { command, args, env, expect };
+  });
+}
+
+function updateProvisionStepNumbers(listId) {
+  const cards = document.querySelectorAll(`#${listId} .provision-step-card`);
+  cards.forEach((card, index) => {
+    const title = card.querySelector('.provision-step-title');
+    if (title) title.textContent = tf('provision_step_n', { n: index + 1 });
+  });
+}
+
+function addNestedArgRow(listEl, value = '') {
+  const row = document.createElement('div');
+  row.className = 'repeat-row';
+  row.innerHTML = `
+    <input type="text" data-key="arg" data-i18n-placeholder="ph_provision_arg" placeholder="${escapeAttr(t('ph_provision_arg'))}" value="${escapeAttr(value)}" style="flex:1;min-width:200px">
+    <button type="button" class="btn btn-outline btn-remove" data-i18n="action_remove">${escapeAttr(t('action_remove'))}</button>
+  `;
+  listEl.appendChild(row);
+  row.querySelector('.btn-remove').addEventListener('click', () => row.remove());
+  applyDynamicI18n(row);
+}
+
+function addNestedEnvRow(listEl, data = {}) {
+  const row = document.createElement('div');
+  row.className = 'repeat-row';
+  row.innerHTML = `
+    <input type="text" data-key="name" data-i18n-placeholder="ph_env_name" placeholder="${escapeAttr(t('ph_env_name'))}" value="${escapeAttr(data.name || '')}">
+    <input type="text" data-key="value" data-i18n-placeholder="ph_env_value" placeholder="${escapeAttr(t('ph_env_value'))}" value="${escapeAttr(data.value || '')}" style="flex:2;min-width:180px">
+    <button type="button" class="btn btn-outline btn-remove" data-i18n="action_remove">${escapeAttr(t('action_remove'))}</button>
+  `;
+  listEl.appendChild(row);
+  row.querySelector('.btn-remove').addEventListener('click', () => row.remove());
+  applyDynamicI18n(row);
+}
+
+function addNestedExpectRow(listEl, value = '') {
+  const row = document.createElement('div');
+  row.className = 'repeat-row';
+  row.innerHTML = `
+    <input type="text" data-key="expect" data-i18n-placeholder="ph_provision_expect" placeholder="${escapeAttr(t('ph_provision_expect'))}" value="${escapeAttr(value)}" style="flex:1;min-width:200px">
+    <button type="button" class="btn btn-outline btn-remove" data-i18n="action_remove">${escapeAttr(t('action_remove'))}</button>
+  `;
+  listEl.appendChild(row);
+  row.querySelector('.btn-remove').addEventListener('click', () => row.remove());
+  applyDynamicI18n(row);
+}
+
+function addProvisionStepRow(listId, data = {}) {
+  const step = normalizeStepForEditor(data);
+  const list = document.getElementById(listId);
+  const card = document.createElement('div');
+  card.className = 'provision-step-card';
+  card.innerHTML = `
+    <div class="provision-step-header">
+      <span class="provision-step-title"></span>
+      <div class="provision-step-actions">
+        <button type="button" class="btn btn-outline btn-sm btn-step-up" data-i18n-title="provision_move_up" title="${escapeAttr(t('provision_move_up'))}">↑</button>
+        <button type="button" class="btn btn-outline btn-sm btn-step-down" data-i18n-title="provision_move_down" title="${escapeAttr(t('provision_move_down'))}">↓</button>
+        <button type="button" class="btn btn-outline btn-remove" data-i18n="action_remove">${escapeAttr(t('action_remove'))}</button>
+      </div>
+    </div>
+    <label class="provision-step-command">
+      <span data-i18n="provision_command">${escapeAttr(t('provision_command'))}</span>
+      <input type="text" data-key="command" data-i18n-placeholder="ph_provision_command" placeholder="${escapeAttr(t('ph_provision_command'))}" value="${escapeAttr(step.command)}">
+    </label>
+    <div class="provision-step-sub">
+      <span class="provision-sub-label" data-i18n="provision_args">${escapeAttr(t('provision_args'))}</span>
+      <div class="repeat-list provision-args-list"></div>
+      <button type="button" class="btn btn-outline btn-sm btn-add-arg" data-i18n="provision_add_arg">${escapeAttr(t('provision_add_arg'))}</button>
+    </div>
+    <div class="provision-step-sub">
+      <span class="provision-sub-label" data-i18n="provision_env">${escapeAttr(t('provision_env'))}</span>
+      <div class="repeat-list provision-env-list"></div>
+      <button type="button" class="btn btn-outline btn-sm btn-add-env" data-i18n="provision_add_env">${escapeAttr(t('provision_add_env'))}</button>
+    </div>
+    <div class="provision-step-sub">
+      <span class="provision-sub-label" data-i18n="provision_expect">${escapeAttr(t('provision_expect'))}</span>
+      <div class="repeat-list provision-expect-list"></div>
+      <button type="button" class="btn btn-outline btn-sm btn-add-expect" data-i18n="provision_add_expect">${escapeAttr(t('provision_add_expect'))}</button>
+    </div>
+  `;
+  list.appendChild(card);
+
+  const argsList = card.querySelector('.provision-args-list');
+  const envList = card.querySelector('.provision-env-list');
+  const expectList = card.querySelector('.provision-expect-list');
+  step.args.forEach((arg) => addNestedArgRow(argsList, arg));
+  step.env.forEach((e) => addNestedEnvRow(envList, e));
+  step.expect.forEach((key) => addNestedExpectRow(expectList, key));
+
+  card.querySelector('.btn-add-arg').addEventListener('click', () => addNestedArgRow(argsList));
+  card.querySelector('.btn-add-env').addEventListener('click', () => addNestedEnvRow(envList));
+  card.querySelector('.btn-add-expect').addEventListener('click', () => addNestedExpectRow(expectList));
+  card.querySelector('.btn-remove').addEventListener('click', () => {
+    card.remove();
+    updateProvisionStepNumbers(listId);
+  });
+  card.querySelector('.btn-step-up').addEventListener('click', () => {
+    const prev = card.previousElementSibling;
+    if (!prev) return;
+    card.parentNode.insertBefore(card, prev);
+    updateProvisionStepNumbers(listId);
+  });
+  card.querySelector('.btn-step-down').addEventListener('click', () => {
+    const next = card.nextElementSibling;
+    if (!next) return;
+    card.parentNode.insertBefore(next, card);
+    updateProvisionStepNumbers(listId);
+  });
+
+  applyDynamicI18n(card);
+  updateProvisionStepNumbers(listId);
+}
+
+function fillProvisionSteps(listId, raw) {
+  const list = document.getElementById(listId);
+  list.innerHTML = '';
+  normalizeStepsForEditor(raw).forEach((step) => addProvisionStepRow(listId, step));
+}
+
 function buildTemplate() {
   const form = document.getElementById('template-form');
   const limits = collectLimits();
-  return {
+  const template = {
     id: form.id?.value?.trim() || '',
     name: form.name?.value?.trim() || '',
     description: form.description?.value?.trim() || '',
@@ -329,6 +508,11 @@ function buildTemplate() {
     volumes: collectVolumes(),
     labels: collectLabels(),
   };
+  const provision = packProvisionSteps(collectStepsFromList('provision-steps-list'));
+  const deprovision = packProvisionSteps(collectStepsFromList('deprovision-steps-list'));
+  if (provision) template.provision = provision;
+  if (deprovision) template.deprovision = deprovision;
+  return template;
 }
 
 function normalizeImportedTemplate(raw) {
@@ -364,6 +548,8 @@ function normalizeImportedTemplate(raw) {
     env: Array.isArray(t.env) ? t.env : [],
     volumes: Array.isArray(t.volumes) ? t.volumes : [],
     labels: Array.isArray(t.labels) ? t.labels : [],
+    provision: raw.provision != null ? raw.provision : null,
+    deprovision: raw.deprovision != null ? raw.deprovision : null,
   };
 }
 
@@ -581,6 +767,9 @@ function fillForm(raw) {
   (template.fields || []).forEach((f) => addFieldRow(f));
   if ((template.fields || []).length === 0) addFieldRow();
 
+  fillProvisionSteps('provision-steps-list', template.provision);
+  fillProvisionSteps('deprovision-steps-list', template.deprovision);
+
   document.getElementById('env-list').innerHTML = '';
   (template.env || []).forEach((e) => addEnvRow(e));
   if ((template.env || []).length === 0) addEnvRow();
@@ -595,6 +784,8 @@ function fillForm(raw) {
 }
 
 document.getElementById('add-field').addEventListener('click', () => addFieldRow());
+document.getElementById('add-provision-step').addEventListener('click', () => addProvisionStepRow('provision-steps-list'));
+document.getElementById('add-deprovision-step').addEventListener('click', () => addProvisionStepRow('deprovision-steps-list'));
 document.getElementById('add-entrypoint').addEventListener('click', () => addArgRow('entrypoint-list'));
 document.getElementById('add-command').addEventListener('click', () => addArgRow('command-list'));
 document.getElementById('add-docker-param').addEventListener('click', () => addDockerParamRow());
@@ -696,6 +887,8 @@ window.addEventListener('deployer-lang-changed', () => {
   if (window.deployerI18n) window.deployerI18n.apply();
   applyDynamicI18n(document.getElementById('template-form'));
   refreshVolumePlaceholders();
+  updateProvisionStepNumbers('provision-steps-list');
+  updateProvisionStepNumbers('deprovision-steps-list');
   if (editId) setEditorTitle('editor_edit');
   else setEditorTitle('editor_new');
 });

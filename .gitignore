@@ -16,8 +16,15 @@ Thumbs.db
 test-artifacts-e2e/
 test-artifacts-*/
 test-artifacts-ui-check.png
-templates/qa-manual-tpl-*.json
-templates-default/qa-manual-tpl-*.json
+
+# `templates/` — производная рабочая папка (mount-дериватив).
+# Реальный источник правды: `templates-bundled/`.
+# В рабочей папке могут появляться JSON из UI/API и QA-тесты — не коммитим.
+templates/
+!templates/.gitkeep
+
+# Runtime data (MCP keys, etc.)
+data/
 
 # Coverage
 coverage/

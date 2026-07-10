@@ -19,7 +19,7 @@
     { "name": "demo.plan", "value": "pro" }
   ],
   "volumes": [
-    { "host": "{{DEPLOY_BASE_PATH}}/instances/{{CONTAINER_NAME}}/demo-data", "container": "/tmp/demo-data" }
+    { "host": "{{DEPLOY_BASE_PATH}}/{{CONTAINER_NAME}}/demo-data", "container": "/tmp/demo-data" }
   ],
   "networks": [],
   "ports": [

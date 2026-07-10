@@ -1,5 +1,6 @@
 'use strict';
 
+const fs = require('fs');
 const { describe, it, before } = require('node:test');
 const assert = require('node:assert');
 const path = require('path');
@@ -47,6 +48,21 @@ describe('docker', () => {
   describe('DEPLOY_BASE_PATH', () => {
     it('is resolved absolute path', () => {
       assert.ok(path.isAbsolute(docker.DEPLOY_BASE_PATH));
+    });
+  });
+
+  describe('removeDeployDataDir', () => {
+    it('removes DEPLOY_BASE_PATH/containerName directory', () => {
+      const instanceDir = path.join(basePath, 'purge-me');
+      fs.mkdirSync(path.join(instanceDir, 'data'), { recursive: true });
+      fs.writeFileSync(path.join(instanceDir, 'data', 'x.txt'), '1');
+      const removed = docker.removeDeployDataDir('purge-me');
+      assert.ok(removed.some((p) => p.includes('purge-me')));
+      assert.ok(!fs.existsSync(instanceDir));
+    });
+
+    it('returns empty when directory missing', () => {
+      assert.deepStrictEqual(docker.removeDeployDataDir('no-such-instance'), []);
     });
   });
 });

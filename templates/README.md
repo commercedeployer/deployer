@@ -2,7 +2,7 @@
 
 **Русский:** [README.ru.md](README.ru.md)
 
-JSON files in `templates/`. If the mounted folder is empty, Deployer copies from `templates-default/` on startup.
+JSON files in `templates/`. If the mounted folder is empty, Deployer seeds it from bundled templates inside the image on startup.
 
 ## Container name
 
@@ -13,11 +13,11 @@ JSON files in `templates/`. If the mounted folder is empty, Deployer copies from
 | **Deployer UI** | «Container name» field in deploy form |
 | **HTTP API** | `containerName` in `POST /api/deploy` body |
 
-Template defines image, ports, env, volumes. Persistent volumes: `{{DEPLOY_BASE_PATH}}/instances/{{CONTAINER_NAME}}/…` — `CONTAINER_NAME` comes from deploy context, not from `fields`.
+Template defines image, ports, env, volumes. Persistent volumes: `{{DEPLOY_BASE_PATH}}/{{CONTAINER_NAME}}/…` — `CONTAINER_NAME` comes from deploy context, not from `fields`.
 
 ## docker-demo — plan change
 
-Three tiers (free/basic/pro): same image, **same** container name on redeploy, **one** bind mount `…/instances/{{CONTAINER_NAME}}/demo-data`. Tier changes via env/labels.
+Three tiers (free/basic/pro): same image, **same** container name on redeploy, **one** bind mount `…/{{CONTAINER_NAME}}/demo-data`. Tier changes via env/labels.
 
 ## Placeholders
 

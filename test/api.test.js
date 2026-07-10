@@ -14,7 +14,7 @@ process.env.ADMIN_USER = 'apitest';
 process.env.ADMIN_PASSWORD = 'apipass123';
 process.env.SESSION_SECRET = 'api-test-secret';
 process.env.TEMPLATES_DIR = tmpDir;
-process.env.TEMPLATES_DEFAULT_DIR = path.join(__dirname, '..', 'templates-default');
+process.env.TEMPLATES_BUNDLED_DIR = path.join(__dirname, '..', 'templates-bundled');
 
 const { syncTemplatesFromDefault } = require('../server/templates');
 syncTemplatesFromDefault(tmpDir);
@@ -204,14 +204,23 @@ describe('API', () => {
   });
 
   describe('DELETE /api/containers/:id', () => {
-    it('accepts async delete and marks operation failed when missing', async () => {
+    it('accepts async delete when container missing (removeData=false)', async () => {
       const res = await request(app)
         .delete('/api/containers/nonexistent-id')
         .set('Cookie', cookie);
       assert.strictEqual(res.status, 202);
       assert.ok(res.body.operation?.operationId);
-      const op = await pollOperationStatus(request(app), res.body.operation.operationId, cookie, 'failed');
-      assert.strictEqual(op.status, 'failed');
+      const op = await pollOperationStatus(request(app), res.body.operation.operationId, cookie, 'succeeded');
+      assert.strictEqual(op.status, 'succeeded');
+      assert.strictEqual(op.result?.alreadyGone, true);
+      assert.strictEqual(op.result?.removed, false);
+    });
+
+    it('returns 404 when removeData=true and templateId unknown', async () => {
+      const res = await request(app)
+        .delete('/api/containers/gone?removeData=true&templateId=no-such-template')
+        .set('Cookie', cookie);
+      assert.strictEqual(res.status, 404);
     });
   });
 

@@ -3,13 +3,18 @@
   "info": {
     "title": "Deployer API",
     "description": "REST API for deploying containers from templates. Async: POST deploy/lifecycle → 202 + operation, poll GET /api/operations/:id. Deploy: containerName + params.",
-    "version": "1.2.0"
+    "version": "2.0.0"
   },
   "servers": [{ "url": "/", "description": "Current host" }],
   "components": {
     "securitySchemes": {
       "session": { "type": "apiKey", "in": "cookie", "name": "s" },
-      "apiKey": { "type": "apiKey", "in": "header", "name": "X-API-Key" }
+      "apiKey": { "type": "apiKey", "in": "header", "name": "X-API-Key" },
+      "mcpBearer": {
+        "type": "http",
+        "scheme": "bearer",
+        "description": "MCP key dep_mcp_live_… (full Deployer API via /mcp tools)"
+      }
     },
     "schemas": {
       "ContainerRef": {
@@ -121,7 +126,30 @@
                 "value": { "type": "string" }
               }
             }
+          },
+          "provision": { "$ref": "#/components/schemas/ProvisionStep" },
+          "deprovision": {
+            "oneOf": [
+              { "$ref": "#/components/schemas/ProvisionStep" },
+              { "type": "array", "items": { "$ref": "#/components/schemas/ProvisionStep" } }
+            ]
+          },
+          "postStart": {
+            "oneOf": [
+              { "$ref": "#/components/schemas/ProvisionStep" },
+              { "type": "array", "items": { "$ref": "#/components/schemas/ProvisionStep" } }
+            ]
           }
+        }
+      },
+      "ProvisionStep": {
+        "type": "object",
+        "required": ["command"],
+        "properties": {
+          "command": { "type": "string" },
+          "args": { "type": "array", "items": { "type": "string" } },
+          "env": { "type": "object", "additionalProperties": { "type": "string" } },
+          "expect": { "type": "array", "items": { "type": "string" } }
         }
       },
       "Operation": {
@@ -179,6 +207,49 @@
       "get": {
         "summary": "Current user",
         "responses": { "200": { "description": "user" }, "401": { "description": "Not authenticated" } }
+      }
+    },
+    "/api/v1/mcp/keys": {
+      "get": {
+        "summary": "List MCP keys (session only)",
+        "responses": { "200": { "description": "Keys list with mcpUrl" }, "401": { "description": "Unauthorized" } },
+        "security": [{ "session": [] }]
+      },
+      "post": {
+        "summary": "Issue MCP key (plaintext once, max 5)",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": { "label": { "type": "string" } },
+                "required": ["label"]
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": { "description": "Key created with plaintext" },
+          "400": { "description": "mcp_key_limit" },
+          "401": { "description": "Unauthorized" }
+        },
+        "security": [{ "session": [] }]
+      }
+    },
+    "/api/v1/mcp/keys/{keyId}/revoke": {
+      "post": {
+        "summary": "Revoke MCP key",
+        "parameters": [{ "name": "keyId", "in": "path", "required": true, "schema": { "type": "string" } }],
+        "responses": { "200": { "description": "Revoked" }, "404": { "description": "Not found" } },
+        "security": [{ "session": [] }]
+      }
+    },
+    "/mcp": {
+      "post": {
+        "summary": "MCP JSON-RPC (Bearer dep_mcp_live_…)",
+        "description": "Streamable HTTP MCP. See docs/DEPLOYER-MCP-v1-RU.md",
+        "security": [{ "mcpBearer": [] }],
+        "responses": { "200": { "description": "JSON-RPC result" }, "401": { "description": "Invalid key" } }
       }
     },
     "/api/health": {
@@ -272,15 +343,17 @@
         "responses": { "200": { "description": "Container data (optional stats)" }, "404": { "description": "Not found" } }
       },
       "delete": {
-        "summary": "Stop and delete container (async)",
+        "summary": "Stop and delete container (async); purge deploy data dir when removeData=true",
+        "description": "Path :id — same as other lifecycle routes: deploy containerName or Docker container id while it exists. removeData=true deletes DEPLOY_BASE_PATH/<deploy-name>/ even when the container is already gone (202, not 404). templateId query selects deprovision script; overrides deployer.templateId label. deprovision runs only when removeData=true.",
         "parameters": [
-          { "name": "id", "in": "path", "required": true, "schema": { "type": "string" } },
-          { "name": "removeData", "in": "query", "schema": { "type": "boolean", "default": false }, "description": "Also delete host data under DEPLOY_BASE_PATH" }
+          { "name": "id", "in": "path", "required": true, "schema": { "type": "string" }, "description": "Deploy containerName or Docker container id (same as GET/POST lifecycle :id)" },
+          { "name": "removeData", "in": "query", "schema": { "type": "boolean", "default": false }, "description": "Also delete host data under DEPLOY_BASE_PATH/<containerName>/ and run template deprovision when template resolves" },
+          { "name": "templateId", "in": "query", "schema": { "type": "string" }, "description": "Template for deprovision; takes priority over deployer.templateId label on container" }
         ],
         "responses": {
           "202": { "description": "Operation accepted", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/AcceptedOperation" } } } },
           "200": { "description": "Sync mode (DEPLOYER_SYNC_LEGACY=1)" },
-          "404": { "description": "Container not found" },
+          "404": { "description": "Template not found when deprovision is required (before data removal)" },
           "409": { "description": "operation_in_progress" },
           "503": { "description": "queue_full" },
           "429": { "description": "Rate limit" }
@@ -362,6 +435,84 @@
           "503": { "description": "queue_full" },
           "429": { "description": "Rate limit" }
         }
+      }
+    },
+    "/api/capacity": {
+      "get": {
+        "summary": "Deploy capacity snapshot",
+        "responses": {
+          "200": {
+            "description": "total_containers, container_limit, free_slots, queue stats, docker ok|error"
+          }
+        }
+      }
+    },
+    "/api/volumes/{containerName}/manifest": {
+      "get": {
+        "summary": "Volume paths under DEPLOY_BASE_PATH/containerName",
+        "parameters": [{ "name": "containerName", "in": "path", "required": true, "schema": { "type": "string" } }],
+        "responses": { "200": { "description": "manifest with paths, size_bytes, file_count, mtime_max" } }
+      }
+    },
+    "/api/volumes/{containerName}/import-session": {
+      "post": {
+        "summary": "Create one-time import token for volume transfer",
+        "parameters": [{ "name": "containerName", "in": "path", "required": true, "schema": { "type": "string" } }],
+        "responses": { "200": { "description": "importToken, expiresAt" } }
+      }
+    },
+    "/api/volumes/{containerName}/import-stream": {
+      "post": {
+        "summary": "Import gzip-tar volume archive (token query param)",
+        "parameters": [
+          { "name": "containerName", "in": "path", "required": true, "schema": { "type": "string" } },
+          { "name": "token", "in": "query", "required": true, "schema": { "type": "string" } }
+        ],
+        "responses": { "200": { "description": "Import complete" }, "403": { "description": "invalid_import_token" } }
+      }
+    },
+    "/api/volumes/{containerName}/sync": {
+      "post": {
+        "summary": "Replicate volume to peer deployer without removing source container (async)",
+        "parameters": [{ "name": "containerName", "in": "path", "required": true, "schema": { "type": "string" } }],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["targetBaseUrl", "importToken"],
+                "properties": {
+                  "targetBaseUrl": { "type": "string" },
+                  "importToken": { "type": "string" },
+                  "mode": { "type": "string", "enum": ["quiesced", "hot"], "default": "quiesced" }
+                }
+              }
+            }
+          }
+        },
+        "responses": { "202": { "description": "Operation accepted (kind: sync)" } }
+      }
+    },
+    "/api/volumes/{containerName}/transfer": {
+      "post": {
+        "summary": "Emergency transfer: stop/remove source container and copy volume (async)",
+        "parameters": [{ "name": "containerName", "in": "path", "required": true, "schema": { "type": "string" } }],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["targetBaseUrl", "importToken"],
+                "properties": {
+                  "targetBaseUrl": { "type": "string" },
+                  "importToken": { "type": "string" },
+                  "containerName": { "type": "string" }
+                }
+              }
+            }
+          }
+        },
+        "responses": { "202": { "description": "Operation accepted" } }
       }
     }
   }

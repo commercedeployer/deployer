@@ -7,7 +7,7 @@
   <title>Deployer</title>
   <link rel="icon" href="/favicon.svg" type="image/svg+xml">
   <link rel="apple-touch-icon" href="/favicon.svg">
-  <link rel="stylesheet" href="style.css?v=1.2.0">
+  <link rel="stylesheet" href="style.css?v=1.2.4">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/theme-toggles@4.10.1/css/expand.min.css" crossorigin="anonymous">
   <script>
     (function(){var t=localStorage.getItem('deployer-theme');if(t==='dark'||t==='light')document.documentElement.setAttribute('data-theme',t);var l=localStorage.getItem('deployer-lang');if(l==='en'||l==='ru')document.documentElement.setAttribute('lang',l);})();
@@ -34,6 +34,10 @@
     </div>
   </header>
   <main class="main">
+    <section class="section section-mcp" id="section-mcp">
+      <h2 data-i18n="mcp_heading">MCP / AI</h2>
+      <div id="mcp-panel" class="mcp-panel card"></div>
+    </section>
     <section class="section">
       <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;margin-bottom:16px;">
         <h2 style="margin:0;" data-i18n="templates_heading">Шаблоны</h2>
@@ -117,6 +121,22 @@
       </div>
     </div>
   </div>
+  <div id="mcp-key-modal" class="modal-overlay" hidden>
+    <div class="modal modal-mcp-key">
+      <div class="modal-header">
+        <h3 id="mcp-key-modal-title" data-i18n="mcp_modal_title_default">Ключ MCP</h3>
+        <button type="button" class="modal-close" id="mcp-key-modal-x" data-i18n-aria-label="action_close">&times;</button>
+      </div>
+      <div class="modal-form">
+        <p class="muted" data-i18n="mcp_modal_once">Скопируйте ключ сейчас — повторно он не показывается.</p>
+        <input type="text" id="mcp-key-modal-value" class="mcp-key-modal-input" readonly autocomplete="off">
+        <div class="modal-actions">
+          <button type="button" class="btn btn-primary" id="mcp-key-modal-copy" data-i18n="mcp_copy">Копировать</button>
+          <button type="button" class="btn btn-outline" id="mcp-key-modal-close" data-i18n="action_close">Закрыть</button>
+        </div>
+      </div>
+    </div>
+  </div>
   <script src="version.js"></script>
   <script src="i18n.js"></script>
   <script src="shell.js"></script>
@@ -124,6 +144,7 @@
   <script src="api.js"></script>
   <script src="operationPoll.js"></script>
   <script src="list-pager.js"></script>
+  <script src="mcp-keys.js"></script>
   <script src="app.js?v=1.2.0"></script>
 </body>
 </html>

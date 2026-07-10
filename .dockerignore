@@ -16,6 +16,10 @@ test
 test-artifacts-e2e
 test-artifacts-*
 
+# Templates/ — рабочая производная папка (mount-дериватив),
+# реальный seed берётся из templates-bundled внутри образа.
+templates/
+
 # Корневые *.md (документация репозитория)
 /*.md
 

@@ -2,7 +2,7 @@
 
 const { describe, it } = require('node:test');
 const assert = require('node:assert/strict');
-const { resolveSlotKey, normalizeDockerContainerName } = require('../server/deployIdentity');
+const { resolveSlotKey, normalizeDockerContainerName, TEMPLATE_LABEL, templateIdFromLabels } = require('../server/deployIdentity');
 
 describe('deployIdentity', () => {
   it('resolveSlotKey uses containerName', () => {
@@ -19,5 +19,10 @@ describe('deployIdentity', () => {
 
   it('normalizeDockerContainerName rejects empty', () => {
     assert.throws(() => normalizeDockerContainerName('  '), /containerName required/);
+  });
+
+  it('templateIdFromLabels reads deployer.templateId', () => {
+    assert.equal(templateIdFromLabels({ [TEMPLATE_LABEL]: 'wordpress' }), 'wordpress');
+    assert.equal(templateIdFromLabels({}), '');
   });
 });

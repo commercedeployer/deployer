@@ -1,6 +1,7 @@
-/** Deploy slotKey and label — containerName only (Docker container name). */
+/** Deploy slotKey and labels — containerName + template used at deploy. */
 
 const INSTANCE_LABEL = 'deployer.containerName';
+const TEMPLATE_LABEL = 'deployer.templateId';
 
 function trimParam(v) {
   if (v == null) return '';
@@ -19,8 +20,15 @@ function normalizeDockerContainerName(containerName) {
   return name;
 }
 
+function templateIdFromLabels(labels) {
+  if (!labels || typeof labels !== 'object') return '';
+  return trimParam(labels[TEMPLATE_LABEL]);
+}
+
 module.exports = {
   INSTANCE_LABEL,
+  TEMPLATE_LABEL,
   resolveSlotKey,
   normalizeDockerContainerName,
+  templateIdFromLabels,
 };

@@ -23,8 +23,8 @@ let openapi = fs.readFileSync(path.join(__dirname, 'openapi.json'), 'utf8');
 if (openapi.charCodeAt(0) === 0xFEFF) openapi = openapi.slice(1);
 openapi = JSON.parse(openapi);
 const { getSessionSecret, verifyPassword, requireAuth, requireDeployAuth, isApiKeyValid, getDeployAuthMode } = require('./auth');
-const { loadTemplates, ensureDefaultTemplates, syncTemplatesFromDefault, getTemplateById, saveTemplate, deleteTemplate, applyParams } = require('./templates');
-const { createAndStart, listContainers, getContainer, getContainerStats, getContainerDiskUsage, getContainerLogs, stopAndRemoveContainer, restartContainer, stopContainer, startContainer, CONTAINER_LIMIT } = require('./docker');
+const { loadTemplates, ensureDefaultTemplates, syncTemplatesFromDefault, getTemplateById, saveTemplate, deleteTemplate, applyParams, fillDefaults, normalizeTemplateShape } = require('./templates');
+const { listContainers, getContainer, getContainerStats, getContainerDiskUsage, getContainerLogs, deleteManagedContainer, restartContainer, stopContainer, startContainer, CONTAINER_LIMIT } = require('./docker');
 const {
   parseListQuery,
   paginateList,
@@ -32,8 +32,21 @@ const {
   CONTAINERS_LIST_MAX_LIMIT,
 } = require('./listPagination');
 const { enqueueOperation, getOperation, publicOperation } = require('./operations');
-const { resolveSlotKey, normalizeDockerContainerName } = require('./deployIdentity');
+const { getCapacitySnapshot, probeDocker } = require('./capacity');
+const {
+  createImportSession,
+  consumeImportToken,
+  getVolumeManifest,
+  unpackArchive,
+  transferVolumeToTarget,
+  syncVolumeToPeer,
+} = require('./volumeTransfer');
+const { resolveSlotKey, normalizeDockerContainerName, INSTANCE_LABEL, TEMPLATE_LABEL, templateIdFromLabels } = require('./deployIdentity');
 const { REGISTERED: GEN_TOKENS } = require('./genTokens');
+const { createGenCache } = require('./genTokens');
+const { executeDeploy, deployContext, findTemplate } = require('./deployService');
+const { createMcpServer } = require('./mcp/server');
+const { createMcpKeyRoutes } = require('./routes/mcpKeyRoutes');
 
 const SYNC_LEGACY = String(process.env.DEPLOYER_SYNC_LEGACY || '0').trim() === '1';
 
@@ -42,10 +55,6 @@ function acceptOperation(res, op) {
   res.set('Location', `/api/operations/${op.id}`);
   res.set('Retry-After', '2');
   return res.status(202).json(payload);
-}
-
-function deployContext() {
-  return { deployBasePath: process.env.DEPLOY_BASE_PATH || '/opt/deploy-data' };
 }
 
 function apiKeyFromReq(req) {
@@ -103,6 +112,10 @@ app.use(cookieSession({
 }));
 
 app.use(express.static(path.join(__dirname, '..', 'public')));
+app.use('/docs', express.static(path.join(__dirname, '..', 'docs')));
+
+app.use('/mcp', createMcpServer());
+app.use(createMcpKeyRoutes());
 
 const loginLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
@@ -137,8 +150,18 @@ app.get('/api/me', (req, res) => {
   res.status(401).json({ error: 'Not authenticated' });
 });
 
-app.get('/api/health', (req, res) => {
-  res.json({ ok: true });
+app.get('/api/health', async (req, res) => {
+  const docker = await probeDocker();
+  res.json({ ok: true, docker });
+});
+
+app.get('/api/capacity', requireDeployAuth, async (req, res) => {
+  try {
+    const snap = await getCapacitySnapshot();
+    res.json(snap);
+  } catch (err) {
+    res.status(500).json({ ok: false, error: err.message || 'capacity_failed' });
+  }
 });
 
 app.get('/api/version', (req, res) => {
@@ -241,38 +264,50 @@ app.post('/api/deploy', requireDeployAuth, deployLimiter, async (req, res) => {
   } catch (err) {
     return res.status(400).json({ error: err.message || 'containerName required' });
   }
-  const templates = loadTemplates();
-  const template = templates.find((t) => t.id === templateId);
+  const template = findTemplate(templateId);
   if (!template) {
     return res.status(404).json({ error: 'Template not found' });
   }
+  const paramsCopy = body.params && typeof body.params === 'object' ? { ...body.params } : {};
   const ctx = deployContext();
-  let spec;
-  let filled;
-  try {
-    const params = body.params && typeof body.params === 'object' ? { ...body.params } : {};
-    ({ spec, filled } = applyParams(template, params, { ...ctx, containerName }));
-  } catch (err) {
-    return res.status(400).json({ error: err.message || 'Invalid params' });
+  const genCache = createGenCache();
+  const ctxWithName = { ...ctx, containerName, genCache };
+  if (!template.provision) {
+    try {
+      const normalized = normalizeTemplateShape(template);
+      const filled = fillDefaults(normalized, paramsCopy, ctxWithName);
+      applyParams(template, filled, ctxWithName);
+    } catch (err) {
+      return res.status(400).json({ error: err.message || 'Invalid params' });
+    }
   }
   const slotKey = resolveSlotKey(containerName);
   if (SYNC_LEGACY) {
     try {
-      const result = await createAndStart(spec, { deployName: slotKey });
-      return res.json({ ok: true, container: result, params: filled });
+      const result = await executeDeploy({
+        template,
+        containerName,
+        params: paramsCopy,
+        onPhase: () => {},
+      });
+      return res.json({ ok: true, container: result.container, params: result.params });
     } catch (err) {
       console.error('Deploy error:', err);
-      return res.status(500).json({ error: err.message || 'Deploy failed' });
+      const status = err?.phase === 'provision_failed' ? 500 : 500;
+      return res.status(status).json({ error: err.message || 'Deploy failed' });
     }
   }
   try {
     const op = enqueueOperation({
       kind: 'deploy',
       slotKey,
-      execute: async ({ onPhase }) => {
-        const container = await createAndStart(spec, { onPhase, deployName: slotKey });
-        return { container, params: filled };
-      },
+      execute: async ({ onPhase }) =>
+        executeDeploy({
+          template,
+          containerName,
+          params: paramsCopy,
+          onPhase,
+        }),
     });
     return acceptOperation(res, op);
   } catch (err) {
@@ -333,11 +368,14 @@ app.get('/api/containers/:id', requireAuth, async (req, res) => {
   try {
     const container = await getContainer(req.params.id);
     if (!container) return res.status(404).json({ error: 'Container not found' });
+    const labels = container.Config?.Labels || {};
     const payload = {
       id: container.Id,
       name: container.Name?.replace(/^\//, ''),
       state: container.State?.Status,
       image: container.Config?.Image,
+      deployName: labels[INSTANCE_LABEL] || '',
+      templateId: templateIdFromLabels(labels),
       mounts: (container.Mounts || []).map((m) => ({ source: m.Source || m.Name, destination: m.Destination })),
     };
     if (req.query.stats === '1') {
@@ -464,27 +502,129 @@ app.post('/api/containers/:id/start', requireAuth, deployLimiter, async (req, re
 
 app.delete('/api/containers/:id', requireAuth, deployLimiter, async (req, res) => {
   const removeData = req.query.removeData === 'true';
+  const templateId = typeof req.query.templateId === 'string' ? req.query.templateId.trim() : '';
   const slotKey = String(req.params.id || '').trim();
+  if (removeData && templateId && !getTemplateById(templateId)) {
+    return res.status(404).json({ error: 'Template not found' });
+  }
   try {
     if (SYNC_LEGACY) {
-      const result = await stopAndRemoveContainer(req.params.id, removeData);
-      if (!result.removed) return res.status(404).json({ error: 'Container not found' });
-      return res.json({ ok: true, dataRemoved: result.dataRemoved || [] });
+      const result = await deleteManagedContainer(req.params.id, removeData, { templateId });
+      return res.json({
+        ok: true,
+        removed: result.removed,
+        alreadyGone: result.alreadyGone,
+        dataRemoved: result.dataRemoved || [],
+        deprovisionWarning: result.deprovisionWarning || null,
+      });
     }
     const op = enqueueOperation({
       kind: 'delete',
       slotKey,
-      execute: async ({ onPhase }) => {
-        const result = await stopAndRemoveContainer(req.params.id, removeData, { onPhase });
-        if (!result.removed) throw new Error('Container not found');
-        return result;
-      },
+      execute: async ({ onPhase }) =>
+        deleteManagedContainer(req.params.id, removeData, { onPhase, templateId }),
     });
     return acceptOperation(res, op);
   } catch (err) {
     if (err?.statusCode) return sendOpError(res, err);
     console.error('Delete container:', err);
     res.status(500).json({ error: err.message || 'Failed to delete container' });
+  }
+});
+
+app.get('/api/volumes/:containerName/manifest', requireDeployAuth, (req, res) => {
+  try {
+    const detail = req.query.detail === '1' || req.query.detail === 'true';
+    const manifest = getVolumeManifest(req.params.containerName, { detail });
+    res.json({ ok: true, manifest });
+  } catch (err) {
+    res.status(400).json({ error: err.message || 'manifest_failed' });
+  }
+});
+
+app.post('/api/volumes/:containerName/import-session', requireDeployAuth, (req, res) => {
+  try {
+    const session = createImportSession(req.params.containerName);
+    res.json({ ok: true, ...session });
+  } catch (err) {
+    res.status(400).json({ error: err.message || 'import_session_failed' });
+  }
+});
+
+app.post('/api/volumes/:containerName/import-stream', requireDeployAuth, async (req, res) => {
+  const token = String(req.query.token || '').trim();
+  const name = req.params.containerName;
+  const { instanceDataDir, peekImportToken, consumeImportToken, runTarUnpackStream } = require('./volumeTransfer');
+  if (!peekImportToken(token, name)) {
+    return res.status(403).json({ error: 'invalid_import_token' });
+  }
+  try {
+    await runTarUnpackStream(req, instanceDataDir(name));
+    if (!consumeImportToken(token, name)) {
+      return res.status(403).json({ error: 'invalid_import_token' });
+    }
+    res.json({ ok: true, containerName: normalizeDockerContainerName(name) });
+  } catch (err) {
+    console.error('import-stream:', err);
+    res.status(500).json({ error: err.message || 'import_failed' });
+  }
+});
+
+app.post('/api/volumes/:containerName/transfer', requireDeployAuth, deployLimiter, async (req, res) => {
+  const body = req.body || {};
+  const containerName = body.containerName || req.params.containerName;
+  try {
+    normalizeDockerContainerName(containerName);
+  } catch (err) {
+    return res.status(400).json({ error: err.message || 'containerName required' });
+  }
+  const slotKey = `vol:${String(containerName).trim()}`;
+  try {
+    const op = enqueueOperation({
+      kind: 'transfer',
+      slotKey,
+      execute: async ({ onPhase }) =>
+        transferVolumeToTarget({
+          containerName,
+          targetBaseUrl: body.targetBaseUrl,
+          importToken: body.importToken,
+          onPhase,
+        }),
+    });
+    return acceptOperation(res, op);
+  } catch (err) {
+    if (err?.statusCode) return sendOpError(res, err);
+    res.status(500).json({ error: err.message || 'transfer_failed' });
+  }
+});
+
+app.post('/api/volumes/:containerName/sync', requireDeployAuth, deployLimiter, async (req, res) => {
+  const body = req.body || {};
+  const containerName = body.containerName || req.params.containerName;
+  try {
+    normalizeDockerContainerName(containerName);
+  } catch (err) {
+    return res.status(400).json({ error: err.message || 'containerName required' });
+  }
+  const mode = String(body.mode || 'quiesced').trim() === 'hot' ? 'hot' : 'quiesced';
+  const slotKey = `vol:${String(containerName).trim()}`;
+  try {
+    const op = enqueueOperation({
+      kind: 'sync',
+      slotKey,
+      execute: async ({ onPhase }) =>
+        syncVolumeToPeer({
+          containerName,
+          targetBaseUrl: body.targetBaseUrl,
+          importToken: body.importToken,
+          mode,
+          onPhase,
+        }),
+    });
+    return acceptOperation(res, op);
+  } catch (err) {
+    if (err?.statusCode) return sendOpError(res, err);
+    res.status(500).json({ error: err.message || 'sync_failed' });
   }
 });
 
@@ -508,9 +648,9 @@ if (require.main === module) {
   if (loaded.length === 0) {
     try {
       result = syncTemplatesFromDefault();
-      console.log('Templates restored from templates-default:', result.copied.length);
+      console.log('Templates restored from bundled templates:', result.copied.length);
     } catch (err) {
-      console.warn('Could not restore templates from templates-default:', err.message);
+      console.warn('Could not restore templates from bundled templates:', err.message);
     }
   } else {
     console.log('Templates loaded:', loaded.length);

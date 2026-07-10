@@ -17,7 +17,7 @@ Date: 2025–2026. App: container deploy admin (Node/Express, Docker API). Paths
 | **Templates** | Template ID regex `SAFE_ID`; file path via fixed directory — no path traversal by ID. |
 | **Data removal** | `removeData=true` only under `DEPLOY_BASE_PATH` (`path.resolve` + `startsWith`). |
 | **Frontend** | Template/field output via `escapeHtml` / `escapeAttr`. |
-| **Dockerfile** | Runs as `node` user, not root. |
+| **Dockerfile** | Entrypoint installs `DEPLOYER_SOFTWARE` as root; with `docker.sock` mounted the process stays root (API access), otherwise `su-exec node`. |
 
 ---
 

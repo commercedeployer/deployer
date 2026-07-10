@@ -1,7 +1,7 @@
 {
   "id": "wordpress",
   "name": "WordPress",
-  "description": "WordPress 6. DB_HOST is the MariaDB container name. Data: instances/{{CONTAINER_NAME}}/html.",
+  "description": "WordPress 6. DB_HOST is the MariaDB container name. Data: {{CONTAINER_NAME}}/html.",
   "image": "wordpress:6-apache",
   "pullPolicy": "ifNotPresent",
   "fields": [
@@ -43,7 +43,7 @@
     { "name": "WORDPRESS_DB_NAME", "value": "{{MARIADB_DATABASE}}" }
   ],
   "volumes": [
-    { "host": "{{DEPLOY_BASE_PATH}}/instances/{{CONTAINER_NAME}}/html", "container": "/var/www/html" }
+    { "host": "{{DEPLOY_BASE_PATH}}/{{CONTAINER_NAME}}/html", "container": "/var/www/html" }
   ],
   "labels": [],
   "networks": [],

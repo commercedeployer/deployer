@@ -867,6 +867,7 @@ if (containersSearchInput) {
 bindContainersPager();
 
 window.addEventListener('deployer-lang-changed', () => {
+  if (window.deployerMcpKeys) window.deployerMcpKeys.load();
   loadTemplates();
   loadContainers();
   if (window.deployerI18n) window.deployerI18n.apply();
@@ -884,6 +885,7 @@ window.addEventListener('deployer-lang-changed', () => {
     return;
   }
   hideModal();
+  if (window.deployerMcpKeys) await window.deployerMcpKeys.load();
   await loadTemplates();
   await loadContainers();
   setInterval(() => {

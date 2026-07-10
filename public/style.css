@@ -173,6 +173,118 @@ body {
 .main { max-width: 900px; margin: 0 auto; padding: 24px; }
 .section { margin-bottom: 32px; }
 .section h2 { margin-bottom: 16px; font-size: 1.25rem; }
+.section-mcp .card {
+  background: var(--bg-card);
+  border-radius: 12px;
+  padding: 20px;
+  box-shadow: 0 1px 4px var(--shadow);
+}
+#mcp-panel > .muted {
+  margin: 0 0 10px;
+}
+.mcp-create-form {
+  margin: 12px 0 0;
+}
+.mcp-create-field-label {
+  display: block;
+  margin: 0 0 4px;
+  font-size: 0.9rem;
+  font-weight: 500;
+  color: var(--text-muted-2);
+  line-height: 1.25;
+}
+.mcp-create-row {
+  display: flex;
+  flex-wrap: nowrap;
+  gap: 12px;
+  align-items: center;
+  max-width: 520px;
+}
+.mcp-create-input {
+  flex: 1 1 auto;
+  min-width: 0;
+  height: 44px;
+  margin: 0;
+  padding: 0 12px;
+  border: 1px solid var(--input-border);
+  border-radius: 8px;
+  font-size: 1rem;
+  background: var(--bg-card);
+  color: var(--text);
+  box-sizing: border-box;
+}
+.mcp-create-input:focus {
+  outline: none;
+  border-color: var(--accent);
+}
+.mcp-create-submit {
+  flex: 0 0 auto;
+  white-space: nowrap;
+}
+@media (max-width: 520px) {
+  .mcp-create-row {
+    flex-wrap: wrap;
+    max-width: none;
+  }
+  .mcp-create-submit {
+    width: 100%;
+  }
+}
+#mcp-create-status {
+  margin: 8px 0 0;
+  min-height: 0;
+}
+#mcp-keys-wrap {
+  margin-top: 16px;
+  padding-top: 16px;
+  border-top: 1px solid var(--border, rgba(128, 128, 128, 0.25));
+}
+.mcp-keys-table-wrap {
+  margin-top: 0;
+  overflow-x: auto;
+}
+.mcp-keys-table-wrap:empty,
+.mcp-keys-table-wrap > .muted {
+  margin: 0;
+}
+.mcp-keys-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.9rem;
+}
+.mcp-keys-table th,
+.mcp-keys-table td {
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--border-subtle, rgba(128,128,128,0.2));
+  text-align: left;
+  vertical-align: middle;
+}
+.mcp-keys-table th:last-child,
+.mcp-keys-table td.mcp-keys-actions {
+  width: 8.5rem;
+  text-align: right;
+  white-space: nowrap;
+}
+.mcp-key-prefix {
+  font-size: 0.85rem;
+  white-space: nowrap;
+}
+.mcp-keys-table td:nth-child(2) {
+  min-width: 10rem;
+}
+.mcp-key-modal-input {
+  width: 100%;
+  font-family: ui-monospace, monospace;
+  font-size: 0.85rem;
+  padding: 10px 12px;
+  margin: 12px 0;
+  border: 1px solid var(--input-border);
+  border-radius: 8px;
+  background: var(--bg-card);
+  color: var(--text);
+  box-sizing: border-box;
+}
+.mcp-url-line code { word-break: break-all; }
 .form label { display: block; margin-bottom: 16px; }
 .form label span { display: block; margin-bottom: 4px; font-size: 0.9rem; font-weight: 500; color: var(--text-muted-2); }
 .form input { width: 100%; padding: 10px 12px; border: 1px solid var(--input-border); border-radius: 8px; font-size: 1rem; background: var(--bg-card); color: var(--text); box-sizing: border-box; }
@@ -200,6 +312,16 @@ select:focus { outline: none; border-color: var(--accent); }
 .form select { width: 100%; }
 .error { color: var(--error); font-size: 0.9rem; margin-bottom: 12px; }
 .btn { display: inline-flex; align-items: center; justify-content: center; padding: 10px 20px; border-radius: 8px; font-size: 1rem; font-weight: 500; cursor: pointer; border: none; text-decoration: none; }
+.btn.mcp-create-submit {
+  height: 44px;
+  min-height: 44px;
+  max-height: 44px;
+  margin: 0;
+  padding: 0 18px;
+  line-height: 1;
+  box-sizing: border-box;
+  flex-shrink: 0;
+}
 .btn-primary { background: var(--accent); color: #fff; }
 .btn-primary:hover { background: var(--accent-hover); }
 .btn-primary:disabled { opacity: 0.6; cursor: not-allowed; }
@@ -578,6 +700,72 @@ label.deploy-wait input[type="checkbox"] { width: auto; margin: 0; }
   box-sizing: border-box;
 }
 .repeat-row .btn.btn-remove:hover { background: var(--danger-bg); }
+
+.provision-steps-list {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  margin-bottom: 12px;
+}
+.provision-step-card {
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 14px 16px;
+  background: transparent;
+}
+.provision-step-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+.provision-step-title {
+  font-weight: 600;
+  font-size: 0.9375rem;
+}
+.provision-step-actions {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+.provision-step-command {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-bottom: 12px;
+}
+.provision-step-command input {
+  width: 100%;
+  height: 43px;
+  padding: 0 12px;
+  border: 1px solid var(--input-border);
+  border-radius: 8px;
+  background: var(--input-bg);
+  color: var(--text);
+}
+.provision-step-sub {
+  margin-top: 12px;
+}
+.provision-sub-label {
+  display: block;
+  margin-bottom: 8px;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--text-muted);
+}
+.provision-step-card .repeat-list { margin-bottom: 8px; }
+.provision-step-card .btn-step-up,
+.provision-step-card .btn-step-down {
+  width: 43px;
+  min-width: 43px;
+  height: 43px;
+  min-height: 43px;
+  padding: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
 .repeat-list-ports .repeat-row { align-items: center; }
 .repeat-sep { color: var(--text-muted); font-size: 0.9rem; padding: 0 2px; }
 .form textarea { width: 100%; padding: 10px 12px; border: 1px solid var(--input-border); border-radius: 8px; font-size: 1rem; font-family: inherit; resize: vertical; background: var(--bg-card); color: var(--text); box-sizing: border-box; }
