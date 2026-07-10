@@ -1,7 +1,7 @@
 # Deployer
 
 [![CI](https://github.com/commercedeployer/deployer/actions/workflows/ci.yml/badge.svg)](https://github.com/commercedeployer/deployer/actions/workflows/ci.yml)
-[![License](https://img.shields.io/badge/License-Dcommerce%20Deployer%20Source%201.0-blue.svg)](LICENSE)
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 
 Web app for deploying Docker containers from JSON templates: admin UI, REST API, async operations. Manages **only** containers with the managed label (system and foreign containers are invisible).
 
@@ -147,9 +147,4 @@ Docker Hub CI needs secrets `DOCKERHUB_USERNAME` (`commercedeployer`) and `DOCKE
 
 ## License
 
-**D-commerce Deployer Source License 1.0** — [LICENSE](LICENSE).
-
-- **v2.0.0+** (this tree): source-available; internal use to deliver **your** product is allowed; reselling or monetizing **through users' use of Deployer** (including hidden in your UI or offered as a free connector) requires a [commercial license](docs/LICENSE-SUMMARY-RU.md).
-- **v1.x and earlier:** [MIT](LICENSE-MIT.md).
-
-See [CHANGELOG.md](CHANGELOG.md). Russian summary: [docs/LICENSE-SUMMARY-RU.md](docs/LICENSE-SUMMARY-RU.md).
+[MIT](LICENSE)

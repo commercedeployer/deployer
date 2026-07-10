@@ -1,7 +1,7 @@
 # Deployer
 
 [![CI](https://github.com/commercedeployer/deployer/actions/workflows/ci.yml/badge.svg)](https://github.com/commercedeployer/deployer/actions/workflows/ci.yml)
-[![License](https://img.shields.io/badge/License-Dcommerce%20Deployer%20Source%201.0-blue.svg)](LICENSE)
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 
 Веб-приложение для развёртывания Docker-контейнеров по JSON-шаблонам: админка, REST API, async-операции. Управляет **только** контейнерами с managed-меткой (системные и чужие недоступны).
 
@@ -153,9 +153,4 @@ docker pull commercedeployer/deployer:latest
 
 ## Лицензия
 
-**D-commerce Deployer Source License 1.0** — [LICENSE](LICENSE).
-
-- **v2.0.0+** (это дерево): исходники открыты; можно использовать **внутри** своей системы для доставки **своего** продукта; перепродажа и заработок **через использование Deployer пользователями** (в том числе встроенного в оболочку или «бесплатного коннектора») — только с [коммерческой лицензией](docs/LICENSE-SUMMARY-RU.md).
-- **v1.x и ранее:** [MIT](LICENSE-MIT.md).
-
-См. [CHANGELOG.md](CHANGELOG.md). Кратко по-русски: [docs/LICENSE-SUMMARY-RU.md](docs/LICENSE-SUMMARY-RU.md).
+[MIT](LICENSE)

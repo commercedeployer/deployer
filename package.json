@@ -1,9 +1,9 @@
 {
   "name": "deployer",
-  "version": "2.0.0",
+  "version": "1.2.0",
   "description": "Deployer — deploy containers from JSON templates",
   "main": "server/index.js",
-  "license": "LicenseRef-Dcommerce-Deployer-Source-1.0",
+  "license": "MIT",
   "repository": {
     "type": "git",
     "url": "https://github.com/commercedeployer/deployer.git"
