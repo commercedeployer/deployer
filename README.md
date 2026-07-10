@@ -1,7 +1,7 @@
 # Deployer
 
 [![CI](https://github.com/commercedeployer/deployer/actions/workflows/ci.yml/badge.svg)](https://github.com/commercedeployer/deployer/actions/workflows/ci.yml)
-[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
+[![License](https://img.shields.io/badge/License-Dcommerce%20Deployer%20Source%201.0-blue.svg)](LICENSE)
 
 Web app for deploying Docker containers from JSON templates: admin UI, REST API, async operations. Manages **only** containers with the managed label (system and foreign containers are invisible).
 
@@ -14,9 +14,12 @@ VPS install (Traefik, registry, Deployer in one stack) — separate project [Set
 ## Features
 
 - Deploy by template: `templateId` + `containerName` + `params`
+- **Provision / deprovision / postStart** — steps **inside the Deployer container** (inline in template JSON); tools via **`DEPLOYER_SOFTWARE`** (setup-server-stack `.env`, default `bash,curl`)
 - Async API: `POST /api/deploy` → **202** + poll `GET /api/operations/:id`
 - Template editor in UI, JSON import
 - Traefik labels, multi-network, volumes under `DEPLOY_BASE_PATH`
+- `GET /api/capacity` — slots and queue (Commerce placement)
+- Volume transfer API for cross-node failover (`/api/volumes/...`)
 - API key + session, rate limits, Helmet, OpenAPI `/api-docs`
 
 ---
@@ -28,6 +31,7 @@ VPS install (Traefik, registry, Deployer in one stack) — separate project [Set
 ```bash
 cp .env.example .env
 # ADMIN_PASSWORD, SESSION_SECRET, DEPLOY_BASE_PATH
+# Optional: DEPLOYER_PUBLIC_BASE_URL (MCP/Cursor; on stack — https://deployer.${DOMAIN})
 npm install
 npm start
 ```
@@ -98,8 +102,11 @@ Environment variables: `.env.example`.
 
 | Topic | Document |
 |-------|----------|
+| Provision / deprovision | [docs/PROVISION-v1-RU.md](docs/PROVISION-v1-RU.md) (RU), [docs/PROVISION-PITFALLS-v1-RU.md](docs/PROVISION-PITFALLS-v1-RU.md) |
+| Provision tools (`DEPLOYER_SOFTWARE`) | [config/deployer-software.example.env](config/deployer-software.example.env), setup-server-stack `.env.example` |
 | HTTP API for clients | [docs/API-INTEGRATION.md](docs/API-INTEGRATION.md) |
 | AI agent guide | [docs/AGENT-GUIDE.md](docs/AGENT-GUIDE.md) |
+| MCP (UI keys, env) | [docs/DEPLOYER-MCP-v1-RU.md](docs/DEPLOYER-MCP-v1-RU.md) |
 | Manual server deploy | [docs/MANUAL-DEPLOY.md](docs/MANUAL-DEPLOY.md) |
 | Templates | [templates/README.md](templates/README.md) |
 | DNS / Traefik | [DOMAINS-AND-DNS.md](DOMAINS-AND-DNS.md) |
@@ -140,4 +147,9 @@ Docker Hub CI needs secrets `DOCKERHUB_USERNAME` (`commercedeployer`) and `DOCKE
 
 ## License
 
-[MIT](LICENSE)
+**D-commerce Deployer Source License 1.0** — [LICENSE](LICENSE).
+
+- **v2.0.0+** (this tree): source-available; internal use to deliver **your** product is allowed; reselling or monetizing **through users' use of Deployer** (including hidden in your UI or offered as a free connector) requires a [commercial license](docs/LICENSE-SUMMARY-RU.md).
+- **v1.x and earlier:** [MIT](LICENSE-MIT.md).
+
+See [CHANGELOG.md](CHANGELOG.md). Russian summary: [docs/LICENSE-SUMMARY-RU.md](docs/LICENSE-SUMMARY-RU.md).

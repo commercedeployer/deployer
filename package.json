@@ -1,9 +1,9 @@
 {
   "name": "deployer",
-  "version": "1.2.0",
+  "version": "2.0.0",
   "description": "Deployer — deploy containers from JSON templates",
   "main": "server/index.js",
-  "license": "MIT",
+  "license": "LicenseRef-Dcommerce-Deployer-Source-1.0",
   "repository": {
     "type": "git",
     "url": "https://github.com/commercedeployer/deployer.git"
@@ -28,6 +28,7 @@
     "test:ui:deploy": "node scripts/ui-deploy-smoke-playwright.js",
     "test:integration": "node scripts/run-integration-tests.js",
     "test:all": "node scripts/run-unit-tests.js && node scripts/run-integration-tests.js && node scripts/ui-smoke-playwright.js && node scripts/ui-e2e-playwright.js && node scripts/ui-deploy-smoke-playwright.js",
+    "invoke:mcp-live": "node scripts/invoke-mcp-live.mjs",
     "restore-templates": "node scripts/restore-templates.js"
   },
   "engines": {
