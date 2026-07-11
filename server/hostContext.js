@@ -1,11 +1,10 @@
 /**
  * Deployer host env keys available in provision steps and template substitution.
+ * Postgres admin URL belongs in the template provision.env — not Deployer process env.
  */
 const HOST_ENV_KEYS = [
-  'POSTGRES_ADMIN_URL',
   'DEPLOY_BASE_PATH',
   'SHARED_APP_NETWORK',
-  'POSTGRES_HOST',
 ];
 
 function deployHostContext() {
@@ -17,7 +16,6 @@ function deployHostContext() {
   if (!ctx.DEPLOY_BASE_PATH) {
     ctx.DEPLOY_BASE_PATH = (process.env.DEPLOY_BASE_PATH || '/opt/deploy-data').replace(/\/+$/, '');
   }
-  if (!ctx.POSTGRES_HOST) ctx.POSTGRES_HOST = 'postgres';
   return ctx;
 }
 

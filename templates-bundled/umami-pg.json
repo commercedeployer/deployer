@@ -40,8 +40,8 @@
       "psql \"$POSTGRES_ADMIN_URL\" -v ON_ERROR_STOP=1 -c \"DO \\$\\$ BEGIN CREATE ROLE \\\"$TENANT\\\" LOGIN PASSWORD '$TENANT'; EXCEPTION WHEN duplicate_object THEN NULL; END \\$\\$;\" && { psql \"$POSTGRES_ADMIN_URL\" -tAc \"SELECT 1 FROM pg_database WHERE datname='$TENANT'\" | grep -q 1 || psql \"$POSTGRES_ADMIN_URL\" -v ON_ERROR_STOP=1 -c \"CREATE DATABASE \\\"$TENANT\\\" OWNER \\\"$TENANT\\\"\"; } && printf '%s\\n' \"{\\\"DB_USER\\\":\\\"$TENANT\\\",\\\"DB_PASSWORD\\\":\\\"$TENANT\\\",\\\"DATABASE_URL\\\":\\\"postgresql://$TENANT:$TENANT@$POSTGRES_HOST:5432/$TENANT\\\"}\""
     ],
     "env": {
-      "POSTGRES_ADMIN_URL": "{{POSTGRES_ADMIN_URL}}",
-      "POSTGRES_HOST": "{{POSTGRES_HOST}}",
+      "POSTGRES_ADMIN_URL": "postgresql://provision_user:CHANGE_ME@postgres:5432/postgres",
+      "POSTGRES_HOST": "postgres",
       "TENANT": "{{CONTAINER_NAME}}"
     },
     "expect": ["DB_USER", "DB_PASSWORD", "DATABASE_URL"]
@@ -53,7 +53,7 @@
       "psql \"$POSTGRES_ADMIN_URL\" -v ON_ERROR_STOP=1 -c \"DROP DATABASE IF EXISTS \\\"$TENANT\\\"\" -c \"DROP ROLE IF EXISTS \\\"$TENANT\\\"\""
     ],
     "env": {
-      "POSTGRES_ADMIN_URL": "{{POSTGRES_ADMIN_URL}}",
+      "POSTGRES_ADMIN_URL": "postgresql://provision_user:CHANGE_ME@postgres:5432/postgres",
       "TENANT": "{{CONTAINER_NAME}}"
     },
     "expect": []
@@ -74,7 +74,7 @@
     "command": "node",
     "args": ["server/umamiAdminSeed.js"],
     "env": {
-      "DATABASE_URL": "postgresql://{{CONTAINER_NAME}}:{{CONTAINER_NAME}}@{{POSTGRES_HOST}}:5432/{{CONTAINER_NAME}}",
+      "DATABASE_URL": "postgresql://{{CONTAINER_NAME}}:{{CONTAINER_NAME}}@postgres:5432/{{CONTAINER_NAME}}",
       "DEFAULT_ADMIN_USERNAME": "{{DEFAULT_ADMIN_USERNAME}}",
       "DEFAULT_ADMIN_PASSWORD": "{{DEFAULT_ADMIN_PASSWORD}}"
     }

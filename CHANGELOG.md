@@ -4,7 +4,18 @@ Format based on [Keep a Changelog](https://keepachangelog.com/).
 
 ## [Unreleased]
 
-## [2.0.0] — 2026-07-10
+## [2.0.1] — 2026-07-12
+
+### Fixed
+
+- Template editor: provision step `env` survives save/reopen; merge from snapshot when DOM rows empty.
+- `saveTemplate`: preserve `provision.env` when UI omits env block.
+
+### Changed
+
+- Remove `POSTGRES_ADMIN_URL` / `POSTGRES_HOST` from Deployer host env (`hostContext`); Postgres admin URL belongs in template `provision.env` only.
+- Bundled `umami-pg`: literal provision URL placeholder instead of `{{POSTGRES_ADMIN_URL}}`.
+
 
 ### Added
 

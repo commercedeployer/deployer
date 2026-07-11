@@ -313,6 +313,45 @@ describe('templates', () => {
       assert.ok(loaded);
       assert.strictEqual(loaded.name, 'Test');
     });
+    it('saveTemplate keeps provision env when UI save omits env block', () => {
+      const id = `${testId}-prov-env`;
+      templates.saveTemplate({
+        id,
+        name: 'Prov',
+        image: 'img:latest',
+        fields: [],
+        env: [],
+        volumes: [],
+        labels: [],
+        provision: {
+          command: 'bash',
+          args: ['-c', 'echo ok'],
+          env: { SALT: '1234567890', TENANT: '{{CONTAINER_NAME}}' },
+          expect: ['SECRET'],
+        },
+      });
+      const uiSave = {
+        id,
+        name: 'Prov',
+        image: 'img:latest',
+        fields: [],
+        env: [],
+        volumes: [],
+        labels: [],
+        provision: {
+          command: 'bash',
+          args: ['-c', 'echo ok'],
+          expect: ['SECRET'],
+        },
+      };
+      templates.saveTemplate(uiSave);
+      const loaded = templates.getTemplateById(id);
+      assert.deepStrictEqual(loaded.provision.env, {
+        SALT: '1234567890',
+        TENANT: '{{CONTAINER_NAME}}',
+      });
+      templates.deleteTemplate(id);
+    });
     it('saveTemplate throws for invalid id', () => {
       assert.throws(() => templates.saveTemplate({ id: 'bad id', name: 'x' }), /Invalid template id/);
     });

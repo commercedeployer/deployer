@@ -32,6 +32,8 @@ function setEditorTitle(key) {
 
 const urlParams = new URLSearchParams(window.location.search);
 const editId = urlParams.get('id');
+/** Snapshot from last fillForm/import — keeps provision env if UI failed to render rows before save. */
+let loadedTemplateSnapshot = null;
 
 function normalizeTemplateForEditor(raw) {
   const t = raw && typeof raw === 'object' ? { ...raw } : {};
@@ -303,13 +305,30 @@ function collectDockerParams() {
   }).filter(Boolean);
 }
 
+function normalizeStepEnvForEditor(env) {
+  if (Array.isArray(env)) {
+    return env
+      .map((row) => ({
+        name: String(row?.name ?? row?.key ?? '').trim(),
+        value: String(row?.value ?? '').trim(),
+      }))
+      .filter((row) => row.name);
+  }
+  if (env && typeof env === 'object') {
+    return Object.entries(env).map(([name, value]) => ({
+      name: String(name),
+      value: String(value ?? ''),
+    }));
+  }
+  return [];
+}
+
 function normalizeStepForEditor(step) {
   const s = step && typeof step === 'object' ? step : {};
-  const envObj = s.env && typeof s.env === 'object' && !Array.isArray(s.env) ? s.env : {};
   return {
     command: String(s.command || ''),
     args: Array.isArray(s.args) ? s.args.map(String) : [],
-    env: Object.entries(envObj).map(([name, value]) => ({ name, value: String(value ?? '') })),
+    env: normalizeStepEnvForEditor(s.env),
     expect: Array.isArray(s.expect) ? s.expect.map(String) : [],
   };
 }
@@ -319,6 +338,16 @@ function normalizeStepsForEditor(raw) {
   if (Array.isArray(raw)) return raw.map(normalizeStepForEditor);
   if (typeof raw === 'object') return [normalizeStepForEditor(raw)];
   return [];
+}
+
+function mergeProvisionEnvFromSnapshot(packed, snapshotBlock) {
+  if (!packed || !snapshotBlock) return packed;
+  const snapSteps = normalizeStepsForEditor(snapshotBlock);
+  const snap = packProvisionSteps(snapSteps);
+  if (!snap?.env || typeof snap.env !== 'object') return packed;
+  const domEnv = packed.env && typeof packed.env === 'object' ? packed.env : {};
+  if (Object.keys(domEnv).length > 0) return packed;
+  return { ...packed, env: { ...snap.env } };
 }
 
 function packProvisionSteps(steps) {
@@ -508,8 +537,14 @@ function buildTemplate() {
     volumes: collectVolumes(),
     labels: collectLabels(),
   };
-  const provision = packProvisionSteps(collectStepsFromList('provision-steps-list'));
-  const deprovision = packProvisionSteps(collectStepsFromList('deprovision-steps-list'));
+  let provision = packProvisionSteps(collectStepsFromList('provision-steps-list'));
+  let deprovision = packProvisionSteps(collectStepsFromList('deprovision-steps-list'));
+  if (provision && loadedTemplateSnapshot?.provision) {
+    provision = mergeProvisionEnvFromSnapshot(provision, loadedTemplateSnapshot.provision);
+  }
+  if (deprovision && loadedTemplateSnapshot?.deprovision) {
+    deprovision = mergeProvisionEnvFromSnapshot(deprovision, loadedTemplateSnapshot.deprovision);
+  }
   if (provision) template.provision = provision;
   if (deprovision) template.deprovision = deprovision;
   return template;
@@ -519,35 +554,35 @@ function normalizeImportedTemplate(raw) {
   if (!raw || typeof raw !== 'object' || Array.isArray(raw)) {
     throw new Error(t('err_import_not_object'));
   }
-  const t = normalizeTemplateForEditor(raw);
-  const id = String(t.id || '').trim();
+  const tpl = normalizeTemplateForEditor(raw);
+  const id = String(tpl.id || '').trim();
   if (!id || !/^[a-zA-Z0-9_-]+$/.test(id)) {
     throw new Error(t('err_import_id'));
   }
-  if (!String(t.name || '').trim()) throw new Error(t('err_import_name'));
-  if (!String(t.image || '').trim()) throw new Error(t('err_import_image'));
+  if (!String(tpl.name || '').trim()) throw new Error(t('err_import_name'));
+  if (!String(tpl.image || '').trim()) throw new Error(t('err_import_image'));
   return {
     id,
-    name: String(t.name).trim(),
-    description: String(t.description || '').trim(),
-    image: String(t.image).trim(),
-    pullPolicy: String(t.pullPolicy || '').trim(),
-    restartPolicy: String(t.restartPolicy || '').trim(),
-    restartMaxRetries: t.restartMaxRetries != null ? String(t.restartMaxRetries) : '',
-    platform: String(t.platform || '').trim(),
-    waitHealthy: Boolean(t.waitHealthy),
-    waitHealthyTimeoutSec: t.waitHealthyTimeoutSec != null ? String(t.waitHealthyTimeoutSec) : '',
-    user: String(t.user || '').trim(),
-    entrypoint: Array.isArray(t.entrypoint) ? t.entrypoint : [],
-    command: Array.isArray(t.command) ? t.command : [],
-    limits: t.limits && typeof t.limits === 'object' ? t.limits : {},
-    dockerParams: Array.isArray(t.dockerParams) ? t.dockerParams : [],
-    networks: Array.isArray(t.networks) ? t.networks : [],
-    ports: Array.isArray(t.ports) ? t.ports : [],
-    fields: Array.isArray(t.fields) ? t.fields : [],
-    env: Array.isArray(t.env) ? t.env : [],
-    volumes: Array.isArray(t.volumes) ? t.volumes : [],
-    labels: Array.isArray(t.labels) ? t.labels : [],
+    name: String(tpl.name).trim(),
+    description: String(tpl.description || '').trim(),
+    image: String(tpl.image).trim(),
+    pullPolicy: String(tpl.pullPolicy || '').trim(),
+    restartPolicy: String(tpl.restartPolicy || '').trim(),
+    restartMaxRetries: tpl.restartMaxRetries != null ? String(tpl.restartMaxRetries) : '',
+    platform: String(tpl.platform || '').trim(),
+    waitHealthy: Boolean(tpl.waitHealthy),
+    waitHealthyTimeoutSec: tpl.waitHealthyTimeoutSec != null ? String(tpl.waitHealthyTimeoutSec) : '',
+    user: String(tpl.user || '').trim(),
+    entrypoint: Array.isArray(tpl.entrypoint) ? tpl.entrypoint : [],
+    command: Array.isArray(tpl.command) ? tpl.command : [],
+    limits: tpl.limits && typeof tpl.limits === 'object' ? tpl.limits : {},
+    dockerParams: Array.isArray(tpl.dockerParams) ? tpl.dockerParams : [],
+    networks: Array.isArray(tpl.networks) ? tpl.networks : [],
+    ports: Array.isArray(tpl.ports) ? tpl.ports : [],
+    fields: Array.isArray(tpl.fields) ? tpl.fields : [],
+    env: Array.isArray(tpl.env) ? tpl.env : [],
+    volumes: Array.isArray(tpl.volumes) ? tpl.volumes : [],
+    labels: Array.isArray(tpl.labels) ? tpl.labels : [],
     provision: raw.provision != null ? raw.provision : null,
     deprovision: raw.deprovision != null ? raw.deprovision : null,
   };
@@ -725,6 +760,7 @@ function escapeAttr(s) {
 }
 
 function fillForm(raw) {
+  loadedTemplateSnapshot = raw && typeof raw === 'object' ? JSON.parse(JSON.stringify(raw)) : null;
   const template = normalizeTemplateForEditor(raw);
   const form = document.getElementById('template-form');
   form.id.value = template.id || '';

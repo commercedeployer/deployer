@@ -63,7 +63,7 @@
 
 **Риск:** в шаблоне `127.0.0.1:5432`, а Postgres только в Docker-сети compose.
 
-**Обход:** в setup-server-stack Deployer и Postgres в одной сети — хост **`postgres`**, env `POSTGRES_ADMIN_URL` задаёт установщик. Не путать с Ubuntu «хостом» VPS.
+**Обход:** в setup-server-stack Deployer и Postgres в одной сети — хост **`postgres`**. Admin URL — литерал в `provision.env` шаблона (роль с правами `CREATEDB`, не superuser стека).
 
 ---
 

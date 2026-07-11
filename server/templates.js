@@ -123,12 +123,39 @@ function getTemplateById(id) {
   }
 }
 
+function mergeProvisionBlocksFromExisting(incoming, existing) {
+  if (!existing || typeof incoming !== 'object') return incoming;
+  const out = { ...incoming };
+  for (const key of ['provision', 'deprovision', 'postStart']) {
+    if (out[key] == null && existing[key] != null) {
+      out[key] = existing[key];
+    }
+  }
+  for (const key of ['provision', 'deprovision']) {
+    const next = out[key];
+    const prev = existing[key];
+    if (
+      prev?.env
+      && typeof prev.env === 'object'
+      && !Array.isArray(prev.env)
+      && next
+      && typeof next === 'object'
+      && !Array.isArray(next)
+      && !next.env
+    ) {
+      out[key] = { ...next, env: { ...prev.env } };
+    }
+  }
+  return out;
+}
+
 function saveTemplate(template) {
   const id = template && template.id;
   if (!id || !SAFE_ID.test(id)) {
     throw new Error('Invalid template id (only letters, numbers, underscore, hyphen)');
   }
-  const normalized = normalizeTemplateShape(template);
+  const existing = getTemplateById(id);
+  const normalized = mergeProvisionBlocksFromExisting(normalizeTemplateShape(template), existing);
   const dir = TEMPLATES_DIR;
   if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
   const file = path.join(dir, id + '.json');
