@@ -80,7 +80,7 @@ function createMcpServer() {
     return next();
   }
 
-  const mcpAuth = createMcpKeyAuth({ sessionSecret: config.sessionSecret });
+  const mcpAuth = createMcpKeyAuth({ deployerSecret: config.deployerSecret });
   const rateLimiter = rateLimit({
     windowMs: config.rateLimit.windowMs,
     max: config.rateLimit.maxPerWindow,

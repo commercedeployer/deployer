@@ -6,9 +6,9 @@ const path = require('path');
 const express = require('express');
 
 if (process.env.NODE_ENV === 'production') {
-  const secret = process.env.SESSION_SECRET;
+  const secret = process.env.DEPLOYER_SECRET;
   if (!secret || secret === 'change-me-in-production') {
-    console.error('Fatal: SESSION_SECRET must be set in production. Set SESSION_SECRET in .env or environment.');
+    console.error('Fatal: DEPLOYER_SECRET must be set in production. Set DEPLOYER_SECRET in .env or environment.');
     process.exit(1);
   }
 }
@@ -22,7 +22,7 @@ const pkg = require('../package.json');
 let openapi = fs.readFileSync(path.join(__dirname, 'openapi.json'), 'utf8');
 if (openapi.charCodeAt(0) === 0xFEFF) openapi = openapi.slice(1);
 openapi = JSON.parse(openapi);
-const { getSessionSecret, verifyPassword, requireAuth, requireDeployAuth, isApiKeyValid, getDeployAuthMode } = require('./auth');
+const { getDeployerSecret, verifyPassword, requireAuth, requireDeployAuth, isApiKeyValid, getDeployAuthMode } = require('./auth');
 const { loadTemplates, ensureDefaultTemplates, syncTemplatesFromDefault, getTemplateById, saveTemplate, deleteTemplate, applyParams, fillDefaults, normalizeTemplateShape } = require('./templates');
 const { listContainers, getContainer, getContainerStats, getContainerDiskUsage, getContainerLogs, deleteManagedContainer, restartContainer, stopContainer, startContainer, CONTAINER_LIMIT } = require('./docker');
 const {
@@ -103,7 +103,7 @@ app.use(express.json({ limit: '256kb' }));
 app.use(express.urlencoded({ extended: true, limit: '256kb' }));
 app.use(cookieSession({
   name: 's',
-  secret: getSessionSecret(),
+  secret: getDeployerSecret(),
   maxAge: 24 * 60 * 60 * 1000,
   httpOnly: true,
   secure: process.env.NODE_ENV === 'production',

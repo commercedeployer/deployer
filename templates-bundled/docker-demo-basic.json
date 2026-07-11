@@ -1,7 +1,7 @@
 {
   "id": "docker-demo-basic",
   "name": "Docker Demo — Basic",
-  "description": "Demo docker/getting-started, basic tier. Container name at deploy. Same demo-data volume as free/pro — plan changes keep data.",
+  "description": "Demo docker/getting-started, basic tier. Storefront: saas_instance / docker-demo-basic (72h trial in Commerce). Same demo-data volume as free/pro.",
   "image": "docker/getting-started",
   "fields": [
     {

@@ -27,7 +27,7 @@ Date: 2025–2026. App: container deploy admin (Node/Express, Docker API). Paths
 
 | Risk | Description | Recommendation |
 |------|-------------|----------------|
-| **Default SESSION_SECRET** | Predictable session signing if unset. | **Fixed:** production exit if default/missing secret. |
+| **Default DEPLOYER_SECRET** | Predictable session signing if unset. | **Fixed:** production exit if default/missing secret. |
 | **Volume paths on deploy** | Arbitrary host bind mounts. | **Fixed:** validate all host paths under `DEPLOY_BASE_PATH`. |
 | **Delete any container** | Accidental system container removal. | **Fixed:** managed label filter. |
 | **Unbounded JSON body** | Memory DoS. | **Fixed:** `express.json({ limit: '256kb' })`. |
@@ -61,7 +61,7 @@ Date: 2025–2026. App: container deploy admin (Node/Express, Docker API). Paths
 
 ## 4. Improvement backlog
 
-1. **Done:** JSON limit, SESSION_SECRET check, volume path validation, managed labels, privilege jail, API key timing, sameSite=strict.
+1. **Done:** JSON limit, DEPLOYER_SECRET check, volume path validation, managed labels, privilege jail, API key timing, sameSite=strict.
 2. **Nice:** stricter CORS in prod, audit log, param sanitization, Docker health.
 
 ---

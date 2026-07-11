@@ -14,7 +14,7 @@ fs.mkdirSync(dataDir, { recursive: true });
 process.env.NODE_ENV = 'test';
 process.env.ADMIN_USER = 'mcptest';
 process.env.ADMIN_PASSWORD = 'mcppass123';
-process.env.SESSION_SECRET = 'mcp-test-secret-min-32-chars-long';
+process.env.DEPLOYER_SECRET = 'mcp-test-secret-min-32-chars-long';
 process.env.TEMPLATES_DIR = path.join(tmpDir, 'templates');
 process.env.TEMPLATES_BUNDLED_DIR = path.join(__dirname, '..', 'templates-bundled');
 process.env.DEPLOYER_DATA_DIR = dataDir;

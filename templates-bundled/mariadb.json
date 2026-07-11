@@ -1,7 +1,7 @@
 {
   "id": "mariadb",
   "name": "MariaDB",
-  "description": "MariaDB 11. Container name at deploy. Data: DEPLOY_BASE_PATH/{{CONTAINER_NAME}}/data.",
+  "description": "MariaDB 11. Storefront: mariadb_instance / mariadb-month, mariadb-year (deploy_template_id). Data: DEPLOY_BASE_PATH/{{CONTAINER_NAME}}/data.",
   "image": "mariadb:11",
   "pullPolicy": "ifNotPresent",
   "fields": [

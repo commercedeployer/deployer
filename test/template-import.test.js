@@ -13,7 +13,7 @@ const bundledDir = path.join(__dirname, '..', 'templates-bundled');
 process.env.NODE_ENV = 'test';
 process.env.ADMIN_USER = 'importtest';
 process.env.ADMIN_PASSWORD = 'importpass123';
-process.env.SESSION_SECRET = 'import-test-secret';
+process.env.DEPLOYER_SECRET = 'import-test-secret';
 process.env.TEMPLATES_DIR = tmpDir;
 process.env.TEMPLATES_BUNDLED_DIR = bundledDir;
 

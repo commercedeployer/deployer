@@ -1,7 +1,7 @@
 {
   "id": "wordpress",
   "name": "WordPress",
-  "description": "WordPress 6. DB_HOST is the MariaDB container name. Data: {{CONTAINER_NAME}}/html.",
+  "description": "WordPress 6. Storefront: wordpress_instance / wordpress-month (48h trial), wordpress-year. DB_HOST = MariaDB container name.",
   "image": "wordpress:6-apache",
   "pullPolicy": "ifNotPresent",
   "fields": [

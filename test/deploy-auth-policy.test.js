@@ -9,7 +9,7 @@ describe('deploy auth policy', () => {
     process.env.NODE_ENV = 'test';
     process.env.ADMIN_USER = 'policyadmin';
     process.env.ADMIN_PASSWORD = 'policypass123';
-    process.env.SESSION_SECRET = 'policy-session-secret';
+    process.env.DEPLOYER_SECRET = 'policy-session-secret';
     process.env.API_KEY = 'policy-key-123';
     process.env.DEPLOYER_AUTH_MODE = 'api';
 

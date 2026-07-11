@@ -35,7 +35,7 @@ Empty `templates/` is seeded from the image on first start (UID 1000 = `node` in
 openssl rand -hex 32
 ```
 
-Use output for `SESSION_SECRET`.
+Use output for `DEPLOYER_SECRET`.
 
 ---
 
@@ -61,7 +61,7 @@ docker run -d --name deployer \
   --network proxynet \
   -e ADMIN_USER=admin \
   -e ADMIN_PASSWORD='your-password' \
-  -e SESSION_SECRET='your-32-char-secret' \
+  -e DEPLOYER_SECRET='your-32-char-secret' \
   -e PORT=3000 \
   -e API_KEY='' \
   -e DEPLOY_BASE_PATH=/opt/deploy-data \

@@ -19,7 +19,7 @@ sudo chown -R 1000:1000 /opt/deployer/templates
 
 ## 3. Секрет
 
-`openssl rand -hex 32` → `SESSION_SECRET`.
+`openssl rand -hex 32` → `DEPLOYER_SECRET`.
 
 ## 4. Registry
 

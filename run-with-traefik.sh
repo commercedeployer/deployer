@@ -1,6 +1,6 @@
 #!/bin/bash
 # Run Deployer behind Traefik (proxynet). Can be run from any directory.
-# Set: DOMAIN, ADMIN_PASSWORD, SESSION_SECRET (and IMAGE if needed).
+# Set: DOMAIN, ADMIN_PASSWORD, DEPLOYER_SECRET (and IMAGE if needed).
 #
 # Before first run on server:
 #   sudo mkdir -p /opt/deployer/templates /opt/deploy-data
@@ -10,7 +10,7 @@
 DOMAIN="${DOMAIN:-example.com}"
 ADMIN_USER="${ADMIN_USER:-admin}"
 ADMIN_PASSWORD="${ADMIN_PASSWORD:?Set ADMIN_PASSWORD}"
-SESSION_SECRET="${SESSION_SECRET:?Set SESSION_SECRET}"
+DEPLOYER_SECRET="${DEPLOYER_SECRET:?Set DEPLOYER_SECRET}"
 IMAGE="${IMAGE:-deployer:latest}"
 
 HOST="deploy.${DOMAIN}"
@@ -26,7 +26,7 @@ docker run -d --name deployer \
   --network proxynet \
   -e ADMIN_USER="$ADMIN_USER" \
   -e ADMIN_PASSWORD="$ADMIN_PASSWORD" \
-  -e SESSION_SECRET="$SESSION_SECRET" \
+  -e DEPLOYER_SECRET="$DEPLOYER_SECRET" \
   -e DEPLOY_BASE_PATH=/opt/deploy-data \
   -e TZ=Europe/Moscow \
   -v /var/run/docker.sock:/var/run/docker.sock \

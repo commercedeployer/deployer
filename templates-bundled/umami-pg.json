@@ -1,7 +1,7 @@
 {
   "id": "umami-pg",
   "name": "Umami (shared Postgres)",
-  "description": "Umami analytics on shared Postgres. Provision: tenant role+DB via psql inside Deployer container (POSTGRES_ADMIN_URL from stack).",
+  "description": "Umami analytics on shared Postgres. Storefront fixture: Commerce group umami_pg_instance, offer umami-pg-free. Provision: tenant role+DB via psql.",
   "image": "ghcr.io/umami-software/umami:postgresql-latest",
   "pullPolicy": "ifNotPresent",
   "restartPolicy": "unless-stopped",

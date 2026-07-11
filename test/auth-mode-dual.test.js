@@ -9,7 +9,7 @@ describe('deploy auth mode dual', () => {
     process.env.NODE_ENV = 'test';
     process.env.ADMIN_USER = 'dualadmin';
     process.env.ADMIN_PASSWORD = 'dualpass123';
-    process.env.SESSION_SECRET = 'dual-session-secret';
+    process.env.DEPLOYER_SECRET = 'dual-session-secret';
     process.env.API_KEY = 'dual-key-456';
     process.env.DEPLOYER_AUTH_MODE = 'dual';
 

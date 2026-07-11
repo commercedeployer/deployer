@@ -43,7 +43,7 @@ HTTP MCP-сервер на том же домене, что и Deployer: `POST h
 
 - MCP-ключ = **полный доступ** к Deployer API (deploy, lifecycle, шаблоны, volumes). **Без ролей** — в отличие от Commerce.
 - Максимум **5** активных ключей на инстанс Deployer.
-- В БД хранится HMAC-хеш от **`SESSION_SECRET`**, plaintext показывается один раз при выпуске.
+- В БД хранится HMAC-хеш от **`DEPLOYER_SECRET`**, plaintext показывается один раз при выпуске.
 - Отзыв: **только UI** или `POST /api/v1/mcp/keys/:id/revoke` (web-сессия). Через MCP tools — **нельзя**.
 
 ## Auth
@@ -114,7 +114,7 @@ DEPLOYER_MCP_TOOLS_DENY=deployer_container_delete,deployer_template_delete,deplo
 |------------|------------|
 | `DEPLOYER_PUBLIC_BASE_URL` | Публичный HTTPS URL Deployer (подсказки MCP/Cursor). Пусто — из запроса (Host + proxy) |
 | `DEPLOYER_MCP_TOOLS_DENY` | Имена tools через запятую — скрыты из MCP и заблокированы на вызове |
-| `SESSION_SECRET` | Подпись сессии и HMAC hash MCP-ключей |
+| `DEPLOYER_SECRET` | Подпись сессии UI и HMAC hash MCP-ключей |
 
 Ключи выпускаются в UI; без активного ключа `/mcp` отвечает 401.
 

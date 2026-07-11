@@ -7,7 +7,7 @@ function clientIp(req) {
   return req.ip || req.socket?.remoteAddress || null;
 }
 
-function createMcpKeyAuth({ sessionSecret }) {
+function createMcpKeyAuth({ deployerSecret }) {
   return async function mcpKeyAuth(req, res, next) {
     const token = parseBearerAuthorization(req.headers.authorization);
     if (!token || !isMcpBearerToken(token)) {
@@ -17,7 +17,7 @@ function createMcpKeyAuth({ sessionSecret }) {
       return next(err);
     }
     try {
-      const row = mcpKeyStore.resolveFromPlaintext(token, sessionSecret);
+      const row = mcpKeyStore.resolveFromPlaintext(token, deployerSecret);
       if (!row) {
         const err = new Error('Invalid or revoked MCP key');
         err.status = 401;

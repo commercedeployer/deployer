@@ -39,4 +39,4 @@ Provision/deprovision/postStart: шаг(и) в JSON шаблона, выполн
 
 `npm test`, `npm run test:integration`, `npm run test:ui`.
 
-**MCP:** см. [DEPLOYER-MCP-AGENT-RU.md](DEPLOYER-MCP-AGENT-RU.md) (playbook), [DEPLOYER-MCP-v1-RU.md](DEPLOYER-MCP-v1-RU.md) (`DEPLOYER_PUBLIC_BASE_URL`, `DEPLOYER_MCP_TOOLS_DENY`, ключи через UI, hash = `SESSION_SECRET`). Skill: `docs/skills/deployer-mcp-operator/SKILL.md`.
+**MCP:** см. [DEPLOYER-MCP-AGENT-RU.md](DEPLOYER-MCP-AGENT-RU.md) (playbook), [DEPLOYER-MCP-v1-RU.md](DEPLOYER-MCP-v1-RU.md) (`DEPLOYER_PUBLIC_BASE_URL`, `DEPLOYER_MCP_TOOLS_DENY`, ключи через UI, hash = `DEPLOYER_SECRET`). Skill: `docs/skills/deployer-mcp-operator/SKILL.md`.

@@ -6,7 +6,8 @@ const bcrypt = require('bcryptjs');
 
 const ADMIN_USER = process.env.ADMIN_USER || 'admin';
 const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || '';
-const SESSION_SECRET = process.env.SESSION_SECRET || 'change-me-in-production';
+const DEFAULT_DEPLOYER_SECRET = 'change-me-in-production';
+const DEPLOYER_SECRET = process.env.DEPLOYER_SECRET || DEFAULT_DEPLOYER_SECRET;
 
 let passwordHash = null;
 
@@ -23,11 +24,14 @@ function verifyPassword(username, password) {
   return bcrypt.compareSync(password, hash);
 }
 
-function getSessionSecret() {
-  if (process.env.NODE_ENV !== 'production' && (!SESSION_SECRET || SESSION_SECRET === 'change-me-in-production')) {
-    console.warn('Warning: SESSION_SECRET not set or default. Set SESSION_SECRET in production.');
+function getDeployerSecret() {
+  if (
+    process.env.NODE_ENV !== 'production'
+    && (!DEPLOYER_SECRET || DEPLOYER_SECRET === DEFAULT_DEPLOYER_SECRET)
+  ) {
+    console.warn('Warning: DEPLOYER_SECRET not set or default. Set DEPLOYER_SECRET in production.');
   }
-  return SESSION_SECRET;
+  return DEPLOYER_SECRET;
 }
 
 const API_KEY = process.env.API_KEY || '';
@@ -103,7 +107,7 @@ module.exports = {
   ADMIN_USER,
   API_KEY,
   verifyPassword,
-  getSessionSecret,
+  getDeployerSecret,
   requireAuth,
   requireDeployAuth,
   isApiKeyValid,

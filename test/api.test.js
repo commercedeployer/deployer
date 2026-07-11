@@ -12,7 +12,7 @@ const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'deployer-api-'));
 process.env.NODE_ENV = 'test';
 process.env.ADMIN_USER = 'apitest';
 process.env.ADMIN_PASSWORD = 'apipass123';
-process.env.SESSION_SECRET = 'api-test-secret';
+process.env.DEPLOYER_SECRET = 'api-test-secret';
 process.env.TEMPLATES_DIR = tmpDir;
 process.env.TEMPLATES_BUNDLED_DIR = path.join(__dirname, '..', 'templates-bundled');
 

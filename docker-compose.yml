@@ -14,7 +14,7 @@ services:
       - API_KEY=${API_KEY:-change-me}
       - ADMIN_USER=${ADMIN_USER:-admin}
       - ADMIN_PASSWORD=${ADMIN_PASSWORD:-change-me}
-      - SESSION_SECRET=${SESSION_SECRET:-change-me-session-secret}
+      - DEPLOYER_SECRET=${DEPLOYER_SECRET:-change-me-deployer-secret}
       - DEPLOYER_PUBLIC_BASE_URL=${DEPLOYER_PUBLIC_BASE_URL:-}
       - PORT=${PORT:-3000}
     volumes:

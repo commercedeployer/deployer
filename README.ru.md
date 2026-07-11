@@ -48,7 +48,7 @@
 
 ```bash
 cp .env.example .env
-# ADMIN_PASSWORD, SESSION_SECRET, DEPLOY_BASE_PATH
+# ADMIN_PASSWORD, DEPLOYER_SECRET, DEPLOY_BASE_PATH
 # Опционально: DEPLOYER_PUBLIC_BASE_URL (MCP/Cursor; на stack — https://deployer.${DOMAIN})
 npm install
 npm start
@@ -63,7 +63,7 @@ docker build -t deployer:latest .
 docker run -d --name deployer --user root -p 3000:3000 \
   -e ADMIN_USER=admin \
   -e ADMIN_PASSWORD="надёжный_пароль" \
-  -e SESSION_SECRET="$(openssl rand -hex 32)" \
+  -e DEPLOYER_SECRET="$(openssl rand -hex 32)" \
   -e DEPLOY_BASE_PATH=/opt/deploy-data \
   -v /var/run/docker.sock:/var/run/docker.sock \
   -v /opt/deployer/templates:/app/templates \
@@ -71,18 +71,19 @@ docker run -d --name deployer --user root -p 3000:3000 \
   deployer:latest
 ```
 
-Опубликованные образы (public, pull без `docker login`):
+Опубликованные образы (CI на GitHub, `publish-image.yml` — job **GHCR** и job **Docker Hub**):
 
-| Registry | Образ | Страница |
-|----------|--------|----------|
-| **Docker Hub** (по умолчанию в stack) | `docker.io/commercedeployer/deployer:latest` | [hub.docker.com/r/commercedeployer/deployer](https://hub.docker.com/r/commercedeployer/deployer) |
-| **GHCR** | `ghcr.io/commercedeployer/deployer:latest` | GitHub → Packages |
+| Registry | Образ |
+|----------|--------|
+| **GHCR** | `ghcr.io/commercedeployer/deployer:latest` |
+| **Docker Hub** | `commercedeployer/deployer:latest` |
 
 ```bash
-docker pull commercedeployer/deployer:latest
+docker pull ghcr.io/commercedeployer/deployer:latest
+# или: docker pull commercedeployer/deployer:latest
 ```
 
-Образы публикуются под org `commercedeployer` на Docker Hub и GHCR.
+Релиз: тег `v*` в GitHub → CI пушит в оба registry. **Не** собирать и **не** пушить образ Deployer руками.
 
 ### docker compose
 

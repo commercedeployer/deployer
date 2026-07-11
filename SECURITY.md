@@ -8,7 +8,7 @@ Paths in this document are relative to the **project root**.
 
 - **Authentication**: single user from env (`ADMIN_USER` / `ADMIN_PASSWORD`), bcrypt password hash, session cookie (`httpOnly`, `secure` in production, `sameSite=strict` — mitigates CSRF on mutations).
 - **API key**: optional `API_KEY`; header `X-API-Key` for non-browser clients. Constant-time comparison (`crypto.timingSafeEqual`).
-- **Production**: app refuses to start without a non-default `SESSION_SECRET` when `NODE_ENV=production`.
+- **Production**: app refuses to start without a non-default `DEPLOYER_SECRET` when `NODE_ENV=production`.
 - **Headers**: Helmet (CSP, etc.). Request body limit 256 KB (DoS mitigation).
 - **Rate limits**: login 10 / 15 min; deploy 30/min; template writes 60/min.
 - **Volume paths**: on deploy, all host paths in volumes must be **under** `DEPLOY_BASE_PATH`, otherwise rejected.

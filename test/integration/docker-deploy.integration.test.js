@@ -48,7 +48,7 @@ function setupIntegrationEnv() {
   process.env.DEPLOYER_AUTH_MODE = 'api';
   process.env.ADMIN_USER = 'docker-int';
   process.env.ADMIN_PASSWORD = 'docker-int-pass';
-  process.env.SESSION_SECRET = 'docker-int-secret';
+  process.env.DEPLOYER_SECRET = 'docker-int-secret';
   process.env.MANAGED_LABEL_VALUE = 'deployer-docker-int';
   process.env.CONTAINER_LIMIT = '0';
   purgeServerCache();

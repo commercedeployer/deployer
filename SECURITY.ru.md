@@ -8,7 +8,7 @@
 
 - **Аутентификация**: один пользователь из env, bcrypt, сессия (httpOnly, secure в production, `sameSite=strict`).
 - **API-ключ**: опциональный `API_KEY`, заголовок `X-API-Key`, constant-time сравнение.
-- **Production**: без заданного `SESSION_SECRET` приложение не стартует.
+- **Production**: без заданного `DEPLOYER_SECRET` приложение не стартует.
 - **Заголовки**: Helmet. Лимит тела 256 KB.
 - **Rate limit**: логин, deploy, шаблоны.
 - **Пути томов**: только под `DEPLOY_BASE_PATH`.

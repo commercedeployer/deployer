@@ -1,7 +1,7 @@
 {
   "id": "docker-demo-free",
   "name": "Docker Demo — Free",
-  "description": "Demo docker/getting-started, free tier. Container name at deploy. Shared demo-data volume across tiers for plan changes.",
+  "description": "Demo docker/getting-started, free tier. Storefront: saas_instance / docker-demo-free (offer id = template id). Shared demo-data volume across tiers.",
   "image": "docker/getting-started",
   "fields": [
     {

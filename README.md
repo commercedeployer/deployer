@@ -30,7 +30,7 @@ VPS install (Traefik, registry, Deployer in one stack) — separate project [Set
 
 ```bash
 cp .env.example .env
-# ADMIN_PASSWORD, SESSION_SECRET, DEPLOY_BASE_PATH
+# ADMIN_PASSWORD, DEPLOYER_SECRET, DEPLOY_BASE_PATH
 # Optional: DEPLOYER_PUBLIC_BASE_URL (MCP/Cursor; on stack — https://deployer.${DOMAIN})
 npm install
 npm start
@@ -45,7 +45,7 @@ docker build -t deployer:latest .
 docker run -d --name deployer --user root -p 3000:3000 \
   -e ADMIN_USER=admin \
   -e ADMIN_PASSWORD="strong-password" \
-  -e SESSION_SECRET="$(openssl rand -hex 32)" \
+  -e DEPLOYER_SECRET="$(openssl rand -hex 32)" \
   -e DEPLOY_BASE_PATH=/opt/deploy-data \
   -v /var/run/docker.sock:/var/run/docker.sock \
   -v /opt/deployer/templates:/app/templates \
@@ -53,19 +53,19 @@ docker run -d --name deployer --user root -p 3000:3000 \
   deployer:latest
 ```
 
-Published images (public, no `docker login` for pull):
+Published images (GitHub CI `publish-image.yml` — **GHCR** and **Docker Hub** jobs):
 
-| Registry | Image | Page |
-|----------|--------|------|
-| **Docker Hub** (default in stack docs) | `docker.io/commercedeployer/deployer:latest` | [hub.docker.com/r/commercedeployer/deployer](https://hub.docker.com/r/commercedeployer/deployer) |
-| **GHCR** | `ghcr.io/commercedeployer/deployer:latest` | GitHub → Packages |
+| Registry | Image |
+|----------|--------|
+| **GHCR** | `ghcr.io/commercedeployer/deployer:latest` |
+| **Docker Hub** | `commercedeployer/deployer:latest` |
 
 ```bash
-docker pull commercedeployer/deployer:latest
-# or: docker pull ghcr.io/commercedeployer/deployer:latest
+docker pull ghcr.io/commercedeployer/deployer:latest
+# or: docker pull commercedeployer/deployer:latest
 ```
 
-Pin a release tag (e.g. `:v2.0.0`) instead of `:latest` in production. Images are published under org `commercedeployer` on Docker Hub and GHCR.
+Release: `v*` tag → CI pushes to both registries. Do **not** manually build or push Deployer images.
 
 ### Windows + Docker Desktop
 

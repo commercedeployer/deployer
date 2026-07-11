@@ -22,7 +22,7 @@
 
 ## 2. Риски
 
-Критичные пункты (SESSION_SECRET, лимит JSON, пути томов, managed label, privilege jail, API key timing) — **закрыты**. См. английскую версию для таблиц.
+Критичные пункты (DEPLOYER_SECRET, лимит JSON, пути томов, managed label, privilege jail, API key timing) — **закрыты**. См. английскую версию для таблиц.
 
 ---
 

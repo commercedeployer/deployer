@@ -1,5 +1,5 @@
 const crypto = require('node:crypto');
-const { getSessionSecret } = require('../auth');
+const { getDeployerSecret } = require('../auth');
 const {
   generateMcpKeyPlaintext,
   hashMcpKey,
@@ -13,7 +13,7 @@ const MCP_KEYS_MAX = 5;
 function mcpConfig() {
   const publicBaseUrl = String(process.env.DEPLOYER_PUBLIC_BASE_URL || '').replace(/\/$/, '');
   return {
-    sessionSecret: getSessionSecret(),
+    deployerSecret: getDeployerSecret(),
     publicBaseUrl,
     toolsDeny: parseMcpToolsDeny(process.env.DEPLOYER_MCP_TOOLS_DENY),
     rateLimit: {
@@ -50,7 +50,7 @@ function buildMcpKeyRecord({ label, createdBy }) {
   const keyId = crypto.randomUUID();
   const record = {
     key_id: keyId,
-    key_hash: hashMcpKey(plaintext, getSessionSecret()),
+    key_hash: hashMcpKey(plaintext, getDeployerSecret()),
     key_prefix: keyPrefixFromPlaintext(plaintext),
     label: String(label || '').trim() || 'MCP key',
     status: 'active',
