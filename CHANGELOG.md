@@ -4,7 +4,7 @@ Format based on [Keep a Changelog](https://keepachangelog.com/).
 
 ## [Unreleased]
 
-## [2.0.1] — 2026-07-12
+## [2.0.3] — 2026-07-12
 
 ### Fixed
 
@@ -16,6 +16,7 @@ Format based on [Keep a Changelog](https://keepachangelog.com/).
 - Remove `POSTGRES_ADMIN_URL` / `POSTGRES_HOST` from Deployer host env (`hostContext`); Postgres admin URL belongs in template `provision.env` only.
 - Bundled `umami-pg`: literal provision URL placeholder instead of `{{POSTGRES_ADMIN_URL}}`.
 
+## [2.0.0] — 2026-07-10
 
 ### Added
 
