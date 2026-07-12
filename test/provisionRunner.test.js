@@ -23,15 +23,15 @@ describe('provisionRunner', () => {
     assert.strictEqual(normalizeSteps([{ command: 'a' }, null, { command: 'b' }]).length, 2);
   });
 
-  it('buildSubstitutionContext sets CONTAINER_NAME', () => {
-    const { subs } = buildSubstitutionContext({
+  it('buildSubstitutionContext sets CONTAINER_NAME and deploy path in context', () => {
+    const { subs, ctx } = buildSubstitutionContext({
       containerName: 'My-App',
       params: { SECRET: 'x' },
       deployBasePath: '/data',
     });
     assert.strictEqual(subs.CONTAINER_NAME, 'my-app');
     assert.strictEqual(subs.SECRET, 'x');
-    assert.strictEqual(subs.DEPLOY_BASE_PATH, '/data');
+    assert.strictEqual(ctx.DEPLOY_BASE_PATH, '/data');
   });
 
   it('runProvisionBlock runs node script and parses stdout JSON', async () => {
@@ -61,7 +61,6 @@ describe('provisionRunner', () => {
 
   it('runProvisionBlock resolves vault secrets in step env', async () => {
     process.env.DEPLOY_BASE_PATH = vaultTmpBase;
-    secretsStore.invalidateVaultCache();
     secretsStore.setVaultSecret('POSTGRES_ADMIN_URL', 'postgresql://admin:secret@postgres:5432/postgres');
     const script =
       "console.log(JSON.stringify({ RESOLVED: process.env.POSTGRES_ADMIN_URL || '' }));";

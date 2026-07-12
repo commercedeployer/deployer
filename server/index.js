@@ -172,11 +172,11 @@ app.get('/api/version', (req, res) => {
 app.get('/api/substitution-tokens', requireAuth, (req, res) => {
   res.json({
     gen: GEN_TOKENS,
-    context: [
-      {
-        id: 'DEPLOY_BASE_PATH',
-        description: 'Host data directory on Deployer (not a form field)',
-      },
+    resolutionOrder: [
+      'deploy params (form + containerName)',
+      'provision step outputs',
+      'vault (secrets.json)',
+      'Deployer container env',
     ],
   });
 });

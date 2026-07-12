@@ -37,7 +37,7 @@
     "command": "bash",
     "args": [
       "-c",
-      "psql \"$POSTGRES_ADMIN_URL\" -v ON_ERROR_STOP=1 -c \"DO \\$\\$ BEGIN CREATE ROLE \\\"$TENANT\\\" LOGIN PASSWORD '$TENANT'; EXCEPTION WHEN duplicate_object THEN NULL; END \\$\\$;\" && { psql \"$POSTGRES_ADMIN_URL\" -tAc \"SELECT 1 FROM pg_database WHERE datname='$TENANT'\" | grep -q 1 || psql \"$POSTGRES_ADMIN_URL\" -v ON_ERROR_STOP=1 -c \"CREATE DATABASE \\\"$TENANT\\\" OWNER \\\"$TENANT\\\"\"; } && printf '%s\\n' \"{\\\"DB_USER\\\":\\\"$TENANT\\\",\\\"DB_PASSWORD\\\":\\\"$TENANT\\\",\\\"DATABASE_URL\\\":\\\"postgresql://$TENANT:$TENANT@$POSTGRES_HOST:5432/$TENANT\\\"}\""
+      "psql \"$POSTGRES_ADMIN_URL\" -v ON_ERROR_STOP=1 -c \"DO \\$\\$ BEGIN CREATE ROLE \\\"$TENANT\\\" LOGIN PASSWORD '$TENANT'; EXCEPTION WHEN duplicate_object THEN NULL; END \\$\\$;\" && psql \"$POSTGRES_ADMIN_URL\" -v ON_ERROR_STOP=1 -c \"GRANT \\\"$TENANT\\\" TO provision_user WITH SET OPTION;\" && { psql \"$POSTGRES_ADMIN_URL\" -tAc \"SELECT 1 FROM pg_database WHERE datname='$TENANT'\" | grep -q 1 || psql \"$POSTGRES_ADMIN_URL\" -v ON_ERROR_STOP=1 -c \"CREATE DATABASE \\\"$TENANT\\\" OWNER \\\"$TENANT\\\"\"; } && printf '%s\\n' \"{\\\"DB_USER\\\":\\\"$TENANT\\\",\\\"DB_PASSWORD\\\":\\\"$TENANT\\\",\\\"DATABASE_URL\\\":\\\"postgresql://$TENANT:$TENANT@$POSTGRES_HOST:5432/$TENANT\\\"}\""
     ],
     "env": {
       "POSTGRES_ADMIN_URL": "{{POSTGRES_ADMIN_URL}}",
@@ -66,7 +66,7 @@
     { "name": "NODE_ENV", "value": "production" }
   ],
   "volumes": [],
-  "networks": ["{{SHARED_APP_NETWORK}}"],
+  "networks": ["proxynet"],
   "ports": [
     { "containerPort": 3000, "hostPort": "{{HOST_PORT}}", "protocol": "tcp" }
   ],

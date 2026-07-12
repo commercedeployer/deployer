@@ -9,8 +9,7 @@ const { createGenCache, isGenToken, resolveGenToken } = require('./genTokens');
 const { normalizeRestartPolicy, normalizeRestartMaxRetries } = require('./restartPolicy');
 const { normalizeVolumeEntry } = require('./volumes');
 const { normalizeNetworkEntry } = require('./networks');
-const { deployHostContext } = require('./hostContext');
-const { resolveVaultValue } = require('./secretsStore');
+const { resolveVaultValue, VAULT_KEY_RE } = require('./secretsStore');
 
 const TEMPLATES_DIR = process.env.TEMPLATES_DIR || path.join(__dirname, '..', 'templates');
 // Bundled templates live inside the image. During migration we keep backward compatibility:
@@ -210,6 +209,14 @@ function escapeRegex(s) {
   return String(s).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 }
 
+function resolveDeployerEnv(key) {
+  const trimmed = String(key).trim();
+  if (!VAULT_KEY_RE.test(trimmed)) return null;
+  const fromEnv = process.env[trimmed];
+  if (fromEnv == null || String(fromEnv).trim() === '') return null;
+  return String(fromEnv);
+}
+
 function substitute(str, params, context = {}) {
   if (typeof str !== 'string') return str;
   const genCache = context.genCache;
@@ -227,6 +234,8 @@ function substitute(str, params, context = {}) {
     }
     const vaultVal = resolveVaultValue(trimmed);
     if (vaultVal !== null) return vaultVal;
+    const envVal = resolveDeployerEnv(trimmed);
+    if (envVal !== null) return envVal;
     return null;
   };
   const resolveToken = (rawKey) => {
@@ -433,9 +442,8 @@ function applyParams(template, params, context = {}) {
   if (!containerNameRaw) throw new Error('containerName required');
   const { normalizeDockerContainerName } = require('./deployIdentity');
   const dockerName = normalizeDockerContainerName(containerNameRaw);
-  const hostCtx = deployHostContext();
   const filled = fillDefaults(normalized, params, ctx);
-  const subs = { ...hostCtx, ...ctx, ...filled, CONTAINER_NAME: dockerName };
+  const subs = { ...filled, CONTAINER_NAME: dockerName };
   const env = (normalized.env || []).map((e) => ({
     name: typeof e === 'string' ? e : e.name,
     value: substitute(typeof e === 'string' ? '' : (e.value ?? ''), subs, ctx),

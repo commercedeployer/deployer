@@ -14,14 +14,12 @@ const secretsStore = require('../server/secretsStore');
 const templates = require('../server/templates');
 
 after(() => {
-  secretsStore.invalidateVaultCache();
   try {
     fs.rmSync(tmpBase, { recursive: true, force: true });
   } catch (_) {}
 });
 
 beforeEach(() => {
-  secretsStore.invalidateVaultCache();
   const file = path.join(tmpBase, 'secrets.json');
   try {
     fs.rmSync(file, { force: true });
@@ -36,38 +34,18 @@ describe('secretsStore', () => {
     assert.strictEqual(secretsStore.resolveVaultValue('POSTGRES_ADMIN_URL'), 'postgresql://u:p@postgres:5432/postgres');
   });
 
-  it('rejects reserved keys', () => {
-    assert.throws(() => secretsStore.setVaultSecret('API_KEY', 'x'), /vault_invalid_key/);
-    assert.throws(() => secretsStore.setVaultSecret('DEPLOYER_SECRET', 'x'), /vault_invalid_key/);
+  it('allows any valid uppercase key including former reserved names', () => {
+    secretsStore.setVaultSecret('SHARED_APP_NETWORK', 'proxynet');
+    assert.strictEqual(secretsStore.resolveVaultValue('SHARED_APP_NETWORK'), 'proxynet');
   });
 
-  it('env fallback when registered key has empty file value', () => {
-    secretsStore.setVaultSecret('SALT', '');
-    process.env.SALT = 'env-salt-value';
-    try {
-      assert.strictEqual(secretsStore.resolveVaultValue('SALT'), 'env-salt-value');
-    } finally {
-      delete process.env.SALT;
-    }
+  it('rejects invalid key format', () => {
+    assert.throws(() => secretsStore.setVaultSecret('bad-key', 'x'), /vault_invalid_key/);
   });
 
-  it('file value wins over env fallback', () => {
-    secretsStore.setVaultSecret('SALT', 'file-salt');
-    process.env.SALT = 'env-salt';
-    try {
-      assert.strictEqual(secretsStore.resolveVaultValue('SALT'), 'file-salt');
-    } finally {
-      delete process.env.SALT;
-    }
-  });
-
-  it('unregistered key does not resolve from env', () => {
-    process.env.UNREGISTERED_TEST_KEY = 'secret';
-    try {
-      assert.strictEqual(secretsStore.resolveVaultValue('UNREGISTERED_TEST_KEY'), null);
-    } finally {
-      delete process.env.UNREGISTERED_TEST_KEY;
-    }
+  it('empty vault value does not resolve', () => {
+    secretsStore.setVaultSecret('COMMERCE_SALT', '');
+    assert.strictEqual(secretsStore.resolveVaultValue('COMMERCE_SALT'), null);
   });
 
   it('deleteVaultSecret removes key', () => {
@@ -78,10 +56,10 @@ describe('secretsStore', () => {
   });
 });
 
-describe('substitute vault priority', () => {
+describe('substitute resolution order', () => {
   it('params beat vault', () => {
-    secretsStore.setVaultSecret('SALT', 'from-vault');
-    const out = templates.substitute('{{SALT}}', { SALT: 'from-params' }, {});
+    secretsStore.setVaultSecret('COMMERCE_SALT', 'from-vault');
+    const out = templates.substitute('{{COMMERCE_SALT}}', { COMMERCE_SALT: 'from-params' }, {});
     assert.equal(out, 'from-params');
   });
 
@@ -95,5 +73,36 @@ describe('substitute vault priority', () => {
     secretsStore.setVaultSecret('POSTGRES_ADMIN_URL', 'postgresql://a:b@c:5432/postgres');
     const out = templates.substitute('{{POSTGRES_ADMIN_URL}}', {}, {});
     assert.equal(out, 'postgresql://a:b@c:5432/postgres');
+  });
+
+  it('deployer env used after vault', () => {
+    process.env.DEPLOY_BASE_PATH = '/from-env';
+    try {
+      const out = templates.substitute('{{DEPLOY_BASE_PATH}}', {}, {});
+      assert.equal(out, '/from-env');
+    } finally {
+      process.env.DEPLOY_BASE_PATH = tmpBase;
+    }
+  });
+
+  it('params beat deployer env', () => {
+    process.env.DEPLOY_BASE_PATH = '/from-env';
+    try {
+      const out = templates.substitute('{{DEPLOY_BASE_PATH}}', { DEPLOY_BASE_PATH: '/from-params' }, {});
+      assert.equal(out, '/from-params');
+    } finally {
+      process.env.DEPLOY_BASE_PATH = tmpBase;
+    }
+  });
+
+  it('vault beats deployer env', () => {
+    secretsStore.setVaultSecret('COMMERCE_SALT', 'from-vault');
+    process.env.COMMERCE_SALT = 'from-env';
+    try {
+      const out = templates.substitute('{{COMMERCE_SALT}}', {}, {});
+      assert.equal(out, 'from-vault');
+    } finally {
+      delete process.env.COMMERCE_SALT;
+    }
   });
 });

@@ -123,19 +123,21 @@
 
 ---
 
-## 22. Сейф (Vault): denylist и bootstrap
+## 22. Сейф (Vault)
 
-**Риск:** `{{API_KEY}}` или `{{DEPLOYER_SECRET}}` в шаблоне подставятся из env процесса Deployer → утечка в контейнер клиента.
+**Риск:** `{{API_KEY}}` или `{{DEPLOYER_SECRET}}` в шаблоне подставятся из env контейнера Deployer (последний шаг) → утечка в контейнер клиента.
 
-**Обход:** зарезервированные ключи (`API_KEY`, `DEPLOYER_SECRET`, `ADMIN_PASSWORD`, …) нельзя положить в сейф и нельзя резолвить из env. Только явно зарегистрированные ключи сейфа.
+**Обход:** не использовать имена env самого Deployer в шаблонах клиентских приложений; инфра-секреты — через сейф.
 
-**Риск:** cold start — сейф пуст, deploy падает на unresolved `{{POSTGRES_ADMIN_URL}}`.
+**Риск:** сейф пуст, env не задан — deploy падает на unresolved `{{POSTGRES_ADMIN_URL}}`.
 
-**Обход:** один раз добавить ключи в UI или `secrets.json` (можно с пустым value); для bootstrap задать те же имена в env контейнера Deployer в compose — подставятся только пока value в файле пустое. После save в UI файл = источник правды.
+**Обход:** заполнить сейф (UI или `secrets.json`) или задать env контейнера Deployer с тем же именем ключа.
 
 **Риск:** MCP сохранит литерал пароля в JSON шаблона.
 
 **Обход:** в шаблоне только `{{POSTGRES_ADMIN_URL}}`; значение — в сейфе. API сейфа — только web-сессия (не MCP, не x-api-key).
+
+**Порядок подстановки:** params deploy → outputs provision → сейф → env Deployer.
 
 ---
 
@@ -203,7 +205,7 @@
 
 | Данные | Где |
 |--------|-----|
-| Admin URL | **Сейф** Deployer (`secrets.json`) или bootstrap env |
+| Admin URL | **Сейф** Deployer (`secrets.json`) или env Deployer |
 | Tenant-пароль | env контейнера; логика в скрипте шаблона + `params` |
 | В HTTP API | статус, без паролей |
 | Идентификатор контейнера | поле `containerName`, label `deployer.containerName` |

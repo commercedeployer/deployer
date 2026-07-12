@@ -75,7 +75,12 @@ function createDeployerToolHandlers() {
     async deployer_substitution_tokens_get() {
       return {
         gen: GEN_TOKENS,
-        context: [{ id: 'DEPLOY_BASE_PATH', description: 'Host data directory on Deployer (not a form field)' }],
+        resolutionOrder: [
+          'deploy params (form + containerName)',
+          'provision step outputs',
+          'vault (secrets.json)',
+          'Deployer container env',
+        ],
       };
     },
 

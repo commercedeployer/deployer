@@ -1,6 +1,6 @@
 {
   "name": "deployer",
-  "version": "2.1.0",
+  "version": "2.1.1",
   "description": "Deployer — deploy containers from JSON templates",
   "main": "server/index.js",
   "license": "MIT",

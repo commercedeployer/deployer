@@ -5,16 +5,11 @@ const { spawn } = require('child_process');
 const { createGenCache } = require('./genTokens');
 const { substitute } = require('./templates');
 const { normalizeDockerContainerName } = require('./deployIdentity');
-const { deployHostContext } = require('./hostContext');
 
 const DEFAULT_TIMEOUT_MS = Math.max(
   5000,
   parseInt(process.env.PROVISION_TIMEOUT_MS || '120000', 10) || 120000,
 );
-
-function provisionHostContext() {
-  return deployHostContext();
-}
 
 function normalizeSteps(block) {
   if (!block) return [];
@@ -25,19 +20,15 @@ function normalizeSteps(block) {
 
 function buildSubstitutionContext({ containerName, params = {}, deployBasePath, genCache }) {
   const dockerName = normalizeDockerContainerName(containerName);
-  const host = provisionHostContext();
-  const basePath = deployBasePath || host.DEPLOY_BASE_PATH || '/opt/deploy-data';
+  const basePath = (deployBasePath || process.env.DEPLOY_BASE_PATH || '/opt/deploy-data').replace(/\/+$/, '');
   const cache = genCache || createGenCache();
-  const merged = { ...params };
+  const subs = { ...params, CONTAINER_NAME: dockerName };
   const ctx = {
-    ...host,
-    ...merged,
-    CONTAINER_NAME: dockerName,
+    genCache: cache,
     deployBasePath: basePath,
     DEPLOY_BASE_PATH: basePath,
-    genCache: cache,
   };
-  return { subs: { ...merged, CONTAINER_NAME: dockerName, ...host, DEPLOY_BASE_PATH: basePath }, ctx };
+  return { subs, ctx };
 }
 
 function parseStdoutJson(stdout, expectKeys) {
@@ -165,7 +156,6 @@ function resolveDeployIdentifier(idOrName, containerInspect) {
 
 module.exports = {
   DEFAULT_TIMEOUT_MS,
-  provisionHostContext,
   normalizeSteps,
   buildSubstitutionContext,
   runProvisionBlock,

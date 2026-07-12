@@ -326,7 +326,7 @@ describe('templates', () => {
         provision: {
           command: 'bash',
           args: ['-c', 'echo ok'],
-          env: { SALT: '1234567890', TENANT: '{{CONTAINER_NAME}}' },
+          env: { COMMERCE_SALT: '1234567890', TENANT: '{{CONTAINER_NAME}}' },
           expect: ['SECRET'],
         },
       });
@@ -347,7 +347,7 @@ describe('templates', () => {
       templates.saveTemplate(uiSave);
       const loaded = templates.getTemplateById(id);
       assert.deepStrictEqual(loaded.provision.env, {
-        SALT: '1234567890',
+        COMMERCE_SALT: '1234567890',
         TENANT: '{{CONTAINER_NAME}}',
       });
       templates.deleteTemplate(id);

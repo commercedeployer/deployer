@@ -2,11 +2,24 @@
 
 Format based on [Keep a Changelog](https://keepachangelog.com/).
 
+## [2.1.1] — 2026-07-12
+
+### Fixed
+
+- Vault substitution order: deploy params → provision outputs → vault → Deployer env (removed `hostContext` pre-vault bypass).
+- Removed vault key denylist; any valid uppercase key allowed in UI.
+- `umami-pg` bundled: `proxynet` literal, PG16 provision `GRANT … WITH SET OPTION`.
+
+### Changed
+
+- `secretsStore`: no in-memory cache; simpler file read/write.
+- Template editor / MCP hints: correct substitution order; drop stale «server context» wording.
+
 ## [2.1.0] — 2026-07-12
 
 ### Added
 
-- **Vault (Сейф):** shared secrets at `$DEPLOY_BASE_PATH/secrets.json`; templates use `{{KEY}}`; UI block on home (session-only API); MCP/API key cannot read values. Env bootstrap for empty vault keys. Resolution order: deploy params → host context → vault → env.
+- **Vault (Сейф):** shared secrets at `$DEPLOY_BASE_PATH/secrets.json`; templates use `{{KEY}}`; UI block on home (session-only API); MCP/API key cannot read values. Resolution order: deploy params → step context → vault → Deployer env.
 
 ## [Unreleased]
 
@@ -19,7 +32,7 @@ Format based on [Keep a Changelog](https://keepachangelog.com/).
 
 ### Changed
 
-- Remove `POSTGRES_ADMIN_URL` / `POSTGRES_HOST` from Deployer host env (`hostContext`); Postgres admin URL belongs in template `provision.env` only.
+- Remove `POSTGRES_ADMIN_URL` / `POSTGRES_HOST` from Deployer host env; Postgres admin URL belongs in template `provision.env` only.
 - Bundled `umami-pg`: literal provision URL placeholder instead of `{{POSTGRES_ADMIN_URL}}`.
 
 ## [2.0.0] — 2026-07-10

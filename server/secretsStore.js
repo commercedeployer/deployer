@@ -4,68 +4,33 @@
  */
 const fs = require('fs');
 const path = require('path');
-const { deployHostContext } = require('./hostContext');
 
 const VAULT_FILENAME = 'secrets.json';
 const VAULT_KEY_RE = /^[A-Z][A-Z0-9_]{0,63}$/;
 
-/** Keys that must not be stored or resolved from env fallback. */
-const RESERVED_VAULT_KEYS = new Set([
-  'API_KEY',
-  'ADMIN_PASSWORD',
-  'ADMIN_USER',
-  'CONTAINER_NAME',
-  'DEPLOYER_SECRET',
-  'DEPLOY_BASE_PATH',
-  'NODE_ENV',
-  'PATH',
-  'PORT',
-  'SHARED_APP_NETWORK',
-  'TEMPLATES_DIR',
-  'TEMPLATES_BUNDLED_DIR',
-  'DEPLOYER_TEMPLATES_RESTORE_DIR',
-  'HOME',
-  'HOSTNAME',
-  'PWD',
-]);
-
-let cache = {
-  filePath: null,
-  mtimeMs: null,
-  data: {},
-};
+function vaultDeployBasePath() {
+  return (process.env.DEPLOY_BASE_PATH || '/opt/deploy-data').replace(/\/+$/, '');
+}
 
 function resolveVaultFilePath() {
-  const host = deployHostContext();
-  const base = host.DEPLOY_BASE_PATH || '/opt/deploy-data';
-  return path.join(String(base).replace(/\/+$/, ''), VAULT_FILENAME);
+  return path.join(vaultDeployBasePath(), VAULT_FILENAME);
 }
 
 function normalizeKey(raw) {
   const key = String(raw ?? '').trim();
   if (!VAULT_KEY_RE.test(key)) return null;
-  if (RESERVED_VAULT_KEYS.has(key)) return null;
   return key;
-}
-
-function isReservedVaultKey(key) {
-  const k = String(key ?? '').trim();
-  return RESERVED_VAULT_KEYS.has(k);
 }
 
 function isValidVaultKey(key) {
   return normalizeKey(key) != null;
 }
 
-function readFileRaw(filePath) {
-  if (!fs.existsSync(filePath)) {
-    return { mtimeMs: 0, data: {} };
-  }
-  const stat = fs.statSync(filePath);
+function loadVault() {
+  const filePath = resolveVaultFilePath();
+  if (!fs.existsSync(filePath)) return {};
   const text = fs.readFileSync(filePath, 'utf8');
-  if (!text.trim()) {
-    return { mtimeMs: stat.mtimeMs, data: {} };
-  }
+  if (!text.trim()) return {};
   const parsed = JSON.parse(text);
   if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) {
     throw new Error('vault_invalid_json');
@@ -74,70 +39,19 @@ function readFileRaw(filePath) {
   for (const [k, v] of Object.entries(parsed)) {
     const nk = normalizeKey(k);
     if (!nk) continue;
-    if (v == null) {
-      data[nk] = '';
-    } else {
-      data[nk] = String(v);
-    }
+    data[nk] = v == null ? '' : String(v);
   }
-  return { mtimeMs: stat.mtimeMs, data };
+  return data;
 }
 
-function loadVault(force = false) {
-  const filePath = resolveVaultFilePath();
-  if (!force && cache.filePath === filePath && fs.existsSync(filePath)) {
-    try {
-      const stat = fs.statSync(filePath);
-      if (cache.mtimeMs === stat.mtimeMs) return cache.data;
-    } catch {
-      // fall through to reload
-    }
-  }
-  const { mtimeMs, data } = readFileRaw(filePath);
-  cache = { filePath, mtimeMs, data: { ...data } };
-  return cache.data;
-}
-
-function invalidateVaultCache() {
-  cache = { filePath: null, mtimeMs: null, data: {} };
-}
-
-function isRegisteredVaultKey(key) {
-  const nk = normalizeKey(key);
-  if (!nk) return false;
-  const data = loadVault();
-  return Object.prototype.hasOwnProperty.call(data, nk);
-}
-
-function fileValueForKey(key) {
-  const nk = normalizeKey(key);
-  if (!nk) return undefined;
-  const data = loadVault();
-  if (!Object.prototype.hasOwnProperty.call(data, nk)) return undefined;
-  return data[nk];
-}
-
-function envFallbackForKey(key) {
-  const nk = normalizeKey(key);
-  if (!nk || isReservedVaultKey(nk)) return null;
-  if (!isRegisteredVaultKey(nk)) return null;
-  const fromFile = fileValueForKey(nk);
-  if (fromFile != null && String(fromFile).trim() !== '') return null;
-  const fromEnv = process.env[nk];
-  if (fromEnv == null || String(fromEnv).trim() === '') return null;
-  return String(fromEnv);
-}
-
-/**
- * Resolve vault value for template substitution (after params/context miss).
- */
 function resolveVaultValue(key) {
   const nk = normalizeKey(key);
   if (!nk) return null;
-  if (!isRegisteredVaultKey(nk)) return null;
-  const fromFile = fileValueForKey(nk);
-  if (fromFile != null && String(fromFile).trim() !== '') return String(fromFile);
-  return envFallbackForKey(nk);
+  const data = loadVault();
+  if (!Object.prototype.hasOwnProperty.call(data, nk)) return null;
+  const fromFile = data[nk];
+  if (fromFile == null || String(fromFile).trim() === '') return null;
+  return String(fromFile);
 }
 
 function listVaultKeys() {
@@ -146,14 +60,13 @@ function listVaultKeys() {
     .sort()
     .map((key) => ({
       key,
-      set: String(data[key] ?? '').trim() !== '' || envFallbackForKey(key) != null,
+      set: String(data[key] ?? '').trim() !== '',
     }));
 }
 
 function writeVaultAtomic(data) {
   const filePath = resolveVaultFilePath();
-  const dir = path.dirname(filePath);
-  fs.mkdirSync(dir, { recursive: true });
+  fs.mkdirSync(path.dirname(filePath), { recursive: true });
   const tmp = `${filePath}.${process.pid}.${Date.now()}.tmp`;
   fs.writeFileSync(tmp, `${JSON.stringify(data, null, 2)}\n`, { mode: 0o600 });
   try {
@@ -167,8 +80,6 @@ function writeVaultAtomic(data) {
   } catch {
     // ignore
   }
-  invalidateVaultCache();
-  loadVault(true);
 }
 
 function setVaultSecret(key, value) {
@@ -200,27 +111,32 @@ function deleteVaultSecret(key) {
   return { key: nk, deleted: true };
 }
 
-/** Test helper: override vault file location. */
-function resetVaultForTests({ filePath, data } = {}) {
-  if (filePath) {
-    cache = { filePath, mtimeMs: -1, data: data ? { ...data } : {} };
-    if (data) {
-      fs.mkdirSync(path.dirname(filePath), { recursive: true });
-      fs.writeFileSync(filePath, JSON.stringify(data, null, 2));
-      cache.mtimeMs = fs.statSync(filePath).mtimeMs;
+function isRegisteredVaultKey(key) {
+  const nk = normalizeKey(key);
+  if (!nk) return false;
+  return Object.prototype.hasOwnProperty.call(loadVault(), nk);
+}
+
+/** Test helper: write secrets.json under DEPLOY_BASE_PATH. */
+function resetVaultForTests({ data } = {}) {
+  const filePath = resolveVaultFilePath();
+  if (data == null) {
+    try {
+      fs.rmSync(filePath, { force: true });
+    } catch {
+      // ignore
     }
     return;
   }
-  invalidateVaultCache();
+  fs.mkdirSync(path.dirname(filePath), { recursive: true });
+  fs.writeFileSync(filePath, JSON.stringify(data, null, 2));
 }
 
 module.exports = {
   VAULT_FILENAME,
   VAULT_KEY_RE,
-  RESERVED_VAULT_KEYS,
   resolveVaultFilePath,
   normalizeKey,
-  isReservedVaultKey,
   isValidVaultKey,
   isRegisteredVaultKey,
   resolveVaultValue,
@@ -228,6 +144,5 @@ module.exports = {
   setVaultSecret,
   deleteVaultSecret,
   loadVault,
-  invalidateVaultCache,
   resetVaultForTests,
 };

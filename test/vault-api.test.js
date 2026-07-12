@@ -20,7 +20,6 @@ process.env.TEMPLATES_BUNDLED_DIR = path.join(__dirname, '..', 'templates-bundle
 process.env.DEPLOY_BASE_PATH = vaultBase;
 
 const { syncTemplatesFromDefault } = require('../server/templates');
-const { invalidateVaultCache } = require('../server/secretsStore');
 
 fs.mkdirSync(process.env.TEMPLATES_DIR, { recursive: true });
 syncTemplatesFromDefault(process.env.TEMPLATES_DIR);
@@ -39,7 +38,6 @@ describe('Vault API', () => {
   });
 
   after(() => {
-    invalidateVaultCache();
     try {
       fs.rmSync(tmpDir, { recursive: true, force: true });
     } catch (_) {}
@@ -74,7 +72,7 @@ describe('Vault API', () => {
 
   it('PUT /api/vault rejects x-api-key', async () => {
     const res = await request(app)
-      .put('/api/vault/SALT')
+      .put('/api/vault/COMMERCE_SALT')
       .set('x-api-key', 'vault-test-api-key')
       .send({ value: 'salt123' });
     assert.equal(res.status, 403);
@@ -88,13 +86,5 @@ describe('Vault API', () => {
     const del = await request(app).delete('/api/vault/TEMP_KEY').set('Cookie', cookie);
     assert.equal(del.status, 200);
     assert.equal(del.body.deleted, true);
-  });
-
-  it('PUT rejects reserved key', async () => {
-    const res = await request(app)
-      .put('/api/vault/API_KEY')
-      .set('Cookie', cookie)
-      .send({ value: 'nope' });
-    assert.equal(res.status, 400);
   });
 });
