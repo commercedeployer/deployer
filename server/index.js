@@ -22,7 +22,7 @@ const pkg = require('../package.json');
 let openapi = fs.readFileSync(path.join(__dirname, 'openapi.json'), 'utf8');
 if (openapi.charCodeAt(0) === 0xFEFF) openapi = openapi.slice(1);
 openapi = JSON.parse(openapi);
-const { getDeployerSecret, verifyPassword, requireAuth, requireDeployAuth, isApiKeyValid, getDeployAuthMode } = require('./auth');
+const { getDeployerSecret, verifyPassword, requireAuth, requireUiSession, requireDeployAuth, isApiKeyValid, getDeployAuthMode } = require('./auth');
 const { loadTemplates, ensureDefaultTemplates, syncTemplatesFromDefault, getTemplateById, saveTemplate, deleteTemplate, applyParams, fillDefaults, normalizeTemplateShape } = require('./templates');
 const { listContainers, getContainer, getContainerStats, getContainerDiskUsage, getContainerLogs, deleteManagedContainer, restartContainer, stopContainer, startContainer, CONTAINER_LIMIT } = require('./docker');
 const {
@@ -45,6 +45,7 @@ const { resolveSlotKey, normalizeDockerContainerName, INSTANCE_LABEL, TEMPLATE_L
 const { REGISTERED: GEN_TOKENS } = require('./genTokens');
 const { createGenCache } = require('./genTokens');
 const { executeDeploy, deployContext, findTemplate } = require('./deployService');
+const { listVaultKeys, setVaultSecret, deleteVaultSecret } = require('./secretsStore');
 const { createMcpServer } = require('./mcp/server');
 const { createMcpKeyRoutes } = require('./routes/mcpKeyRoutes');
 
@@ -206,8 +207,37 @@ const operationPollLimiter = rateLimit({
   },
 });
 const templatesLimiter = rateLimit({ windowMs: 60 * 1000, max: 60, message: { error: 'Too many requests' } });
+const vaultLimiter = rateLimit({ windowMs: 60 * 1000, max: 30, message: { error: 'Too many vault requests' } });
 const diskLimiter = rateLimit({ windowMs: 60 * 1000, max: 60, message: { error: 'Too many disk usage requests' } });
 const logsLimiter = rateLimit({ windowMs: 60 * 1000, max: 60, message: { error: 'Too many log requests' } });
+
+app.get('/api/vault', requireUiSession, (req, res) => {
+  try {
+    res.json({ ok: true, keys: listVaultKeys() });
+  } catch (err) {
+    res.status(500).json({ ok: false, error: err.message || 'vault_list_failed' });
+  }
+});
+
+app.put('/api/vault/:key', requireUiSession, vaultLimiter, (req, res) => {
+  try {
+    const result = setVaultSecret(req.params.key, req.body?.value);
+    res.json({ ok: true, ...result });
+  } catch (err) {
+    const code = err.code === 'vault_invalid_key' ? 400 : 500;
+    res.status(code).json({ ok: false, error: err.message || 'vault_set_failed' });
+  }
+});
+
+app.delete('/api/vault/:key', requireUiSession, vaultLimiter, (req, res) => {
+  try {
+    const result = deleteVaultSecret(req.params.key);
+    res.json({ ok: true, ...result });
+  } catch (err) {
+    const code = err.code === 'vault_invalid_key' ? 400 : 500;
+    res.status(code).json({ ok: false, error: err.message || 'vault_delete_failed' });
+  }
+});
 
 app.get('/api/templates', requireAuth, (req, res) => {
   const list = loadTemplates().map((t) => ({

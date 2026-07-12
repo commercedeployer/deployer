@@ -141,26 +141,41 @@ Deployer **не угадывает** смысл полей — только **и
 
 ---
 
-## Пароли, логины, секреты — зона шаблона
+## Пароли, логины, секреты
 
-Deployer **не** генерирует tenant-пароли, **не** хранит provision-store, **нет** «соли сервера».
+Deployer **не** генерирует tenant-пароли; tenant-креды — из stdout provision.
 
 | Источник | Где используется |
 |----------|------------------|
 | `{{CONTAINER_NAME}}` | идентификатор инстанса (= `containerName` в API) |
-| `{{KEY}}` из `params` deploy | поля формы оффера Commerce |
-| Значения в `env` шага provision/deprovision | admin URL Postgres (роль с `CREATEDB`), хост `postgres` — **литерал в JSON шаблона** |
+| `{{KEY}}` из **params deploy** | поля формы оффера (приоритет над сейфом) |
+| **Сейф** (`$DEPLOY_BASE_PATH/secrets.json`) | инфра-секреты: `POSTGRES_ADMIN_URL`, `SALT`, … — в шаблоне только `{{KEY}}` |
 | stdout provision (`expect`) | tenant-креды → `{{DB_USER}}` в env контейнера |
 
-**Модель для VPS:** отдельная роль provision (не superuser стека) — логин/пароль в `provision.env` шаблона. Меняешь шаблон на диске, Deployer переустанавливать не нужно. Env процесса Deployer **не** содержит Postgres admin URL.
+### Порядок подстановки `{{KEY}}`
 
-**Tenant-пароль** — логика inline-команды: часто `= CONTAINER_NAME`, или `+ {{SECRET}}` из `params`.
+1. params deploy + outputs provision  
+2. host context (`DEPLOY_BASE_PATH`, `SHARED_APP_NETWORK`, …)  
+3. **сейф** (значение из файла)  
+4. **env процесса Deployer** — только для **зарегистрированных** ключей сейфа с пустым значением в файле (bootstrap в compose)
 
-**Redeploy:** тот же идентификатор + те же `params` → идемпотентный SQL (`IF NOT EXISTS`).
+Зарезервированные ключи (`API_KEY`, `DEPLOYER_SECRET`, …) нельзя положить в сейф.
 
-**Deprovision:** `params` delete **не передаётся** — только `{{CONTAINER_NAME}}` и admin URL из шаблона. Пароль tenant при deprovision должен выводиться из того же правила, что при provision (обычно = идентификатор).
+### Сейф (UI)
 
-Подстановка в env/volumes контейнера — тот же **`applyParams`**, что без provision.
+Главная Deployer → блок **Сейф** (только web-сессия; MCP и x-api-key **не** читают значения).
+
+- `GET /api/vault` — список ключей и флаг `set`, без values  
+- `PUT /api/vault/:key` — записать значение  
+- `DELETE /api/vault/:key` — удалить ключ  
+
+**VPS:** один раз заполнить сейф (UI или правка `secrets.json` на хосте). Шаблоны в git/MCP содержат только `{{POSTGRES_ADMIN_URL}}`, не пароль.
+
+**Tenant-пароль** — логика inline-команды: часто `= CONTAINER_NAME`.
+
+**Redeploy / deprovision** — как раньше; deprovision использует те же `{{KEY}}` из provision env шаблона.
+
+Подстановка в env контейнера — **`applyParams`**, тот же механизм.
 
 ---
 
@@ -269,5 +284,5 @@ Deployer не знает Postgres / Mongo / DNS. Только `command` + `args`
 | Переменные | JSON на stdout + `expect`; мешок `outputs` в RAM |
 | Контейнер | `applyParams` **один раз** после всех шагов |
 | Падение шага | deploy не стартует |
-| Секреты | в шаблоне и inline-командах; отдельный vault не обязателен |
+| Секреты | инфра — **Сейф** (`{{KEY}}`); клиентские — `params` / inline-команды |
 | Delete | deprovision только `removeData=true` + известен шаблон |

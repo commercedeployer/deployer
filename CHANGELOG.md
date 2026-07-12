@@ -2,6 +2,12 @@
 
 Format based on [Keep a Changelog](https://keepachangelog.com/).
 
+## [2.1.0] — 2026-07-12
+
+### Added
+
+- **Vault (Сейф):** shared secrets at `$DEPLOY_BASE_PATH/secrets.json`; templates use `{{KEY}}`; UI block on home (session-only API); MCP/API key cannot read values. Env bootstrap for empty vault keys. Resolution order: deploy params → host context → vault → env.
+
 ## [Unreleased]
 
 ## [2.0.3] — 2026-07-12

@@ -1,5 +1,8 @@
 'use strict';
 
+const fs = require('node:fs');
+const os = require('node:os');
+const path = require('node:path');
 const { describe, it } = require('node:test');
 const assert = require('node:assert');
 const {
@@ -9,6 +12,10 @@ const {
   resolveDeleteTemplateId,
   resolveDeployIdentifier,
 } = require('../server/provisionRunner');
+const secretsStore = require('../server/secretsStore');
+
+const vaultTmpBase = fs.mkdtempSync(path.join(os.tmpdir(), 'provision-vault-'));
+const prevDeployBase = process.env.DEPLOY_BASE_PATH;
 
 describe('provisionRunner', () => {
   it('normalizeSteps accepts object or array', () => {
@@ -50,6 +57,24 @@ describe('provisionRunner', () => {
         ),
       (err) => err.phase === 'provision_failed',
     );
+  });
+
+  it('runProvisionBlock resolves vault secrets in step env', async () => {
+    process.env.DEPLOY_BASE_PATH = vaultTmpBase;
+    secretsStore.invalidateVaultCache();
+    secretsStore.setVaultSecret('POSTGRES_ADMIN_URL', 'postgresql://admin:secret@postgres:5432/postgres');
+    const script =
+      "console.log(JSON.stringify({ RESOLVED: process.env.POSTGRES_ADMIN_URL || '' }));";
+    const out = await runProvisionBlock(
+      {
+        command: 'node',
+        args: ['-e', script],
+        env: { POSTGRES_ADMIN_URL: '{{POSTGRES_ADMIN_URL}}' },
+        expect: ['RESOLVED'],
+      },
+      { containerName: 'app1', params: {}, deployBasePath: vaultTmpBase },
+    );
+    assert.strictEqual(out.RESOLVED, 'postgresql://admin:secret@postgres:5432/postgres');
   });
 
   it('resolveDeleteTemplateId prefers query over label', () => {

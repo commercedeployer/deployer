@@ -7,7 +7,7 @@
   <title>Deployer</title>
   <link rel="icon" href="/favicon.svg" type="image/svg+xml">
   <link rel="apple-touch-icon" href="/favicon.svg">
-  <link rel="stylesheet" href="style.css?v=1.2.4">
+  <link rel="stylesheet" href="style.css?v=1.2.6">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/theme-toggles@4.10.1/css/expand.min.css" crossorigin="anonymous">
   <script>
     (function(){var t=localStorage.getItem('deployer-theme');if(t==='dark'||t==='light')document.documentElement.setAttribute('data-theme',t);var l=localStorage.getItem('deployer-lang');if(l==='en'||l==='ru')document.documentElement.setAttribute('lang',l);})();
@@ -34,6 +34,10 @@
     </div>
   </header>
   <main class="main">
+    <section class="section section-vault" id="section-vault">
+      <h2 data-i18n="vault_heading">Сейф</h2>
+      <div id="vault-panel" class="vault-panel card"></div>
+    </section>
     <section class="section section-mcp" id="section-mcp">
       <h2 data-i18n="mcp_heading">MCP / AI</h2>
       <div id="mcp-panel" class="mcp-panel card"></div>
@@ -144,6 +148,7 @@
   <script src="api.js"></script>
   <script src="operationPoll.js"></script>
   <script src="list-pager.js"></script>
+  <script src="vault.js"></script>
   <script src="mcp-keys.js"></script>
   <script src="app.js?v=1.2.0"></script>
 </body>

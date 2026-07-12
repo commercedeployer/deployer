@@ -63,6 +63,12 @@ function hasValidSession(req) {
   return Boolean(req.session && req.session.user === ADMIN_USER);
 }
 
+/** Vault API: web session only (no x-api-key, no MCP). */
+function requireUiSession(req, res, next) {
+  if (hasValidSession(req)) return next();
+  return res.status(403).json({ ok: false, error: 'vault_session_required' });
+}
+
 function requireAuth(req, res, next) {
   if (hasValidSession(req)) return next();
   const apiKey = req.headers['x-api-key'];
@@ -109,6 +115,7 @@ module.exports = {
   verifyPassword,
   getDeployerSecret,
   requireAuth,
+  requireUiSession,
   requireDeployAuth,
   isApiKeyValid,
   hasApiKeyConfigured,

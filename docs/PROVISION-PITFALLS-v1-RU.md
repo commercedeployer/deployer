@@ -63,7 +63,7 @@
 
 **Риск:** в шаблоне `127.0.0.1:5432`, а Postgres только в Docker-сети compose.
 
-**Обход:** в setup-server-stack Deployer и Postgres в одной сети — хост **`postgres`**. Admin URL — литерал в `provision.env` шаблона (роль с правами `CREATEDB`, не superuser стека).
+**Обход:** в setup-server-stack Deployer и Postgres в одной сети — хост **`postgres`**. Admin URL — **`{{POSTGRES_ADMIN_URL}}`** в шаблоне, значение в **Сейфе** Deployer (не литерал в JSON).
 
 ---
 
@@ -119,7 +119,23 @@
 
 **Риск:** один и тот же захардкоженный секрет для всех инстансов шаблона на этом Deployer.
 
-**Обход:** осознанный выбор архитектора; для изоляции — `params` или разные шаблоны.
+**Обход:** осознанный выбор архитектора; для изоляции — `params`, **Сейф** (`{{KEY}}`) или разные шаблоны.
+
+---
+
+## 22. Сейф (Vault): denylist и bootstrap
+
+**Риск:** `{{API_KEY}}` или `{{DEPLOYER_SECRET}}` в шаблоне подставятся из env процесса Deployer → утечка в контейнер клиента.
+
+**Обход:** зарезервированные ключи (`API_KEY`, `DEPLOYER_SECRET`, `ADMIN_PASSWORD`, …) нельзя положить в сейф и нельзя резолвить из env. Только явно зарегистрированные ключи сейфа.
+
+**Риск:** cold start — сейф пуст, deploy падает на unresolved `{{POSTGRES_ADMIN_URL}}`.
+
+**Обход:** один раз добавить ключи в UI или `secrets.json` (можно с пустым value); для bootstrap задать те же имена в env контейнера Deployer в compose — подставятся только пока value в файле пустое. После save в UI файл = источник правды.
+
+**Риск:** MCP сохранит литерал пароля в JSON шаблона.
+
+**Обход:** в шаблоне только `{{POSTGRES_ADMIN_URL}}`; значение — в сейфе. API сейфа — только web-сессия (не MCP, не x-api-key).
 
 ---
 
@@ -187,7 +203,7 @@
 
 | Данные | Где |
 |--------|-----|
-| Admin URL | env Deployer |
+| Admin URL | **Сейф** Deployer (`secrets.json`) или bootstrap env |
 | Tenant-пароль | env контейнера; логика в скрипте шаблона + `params` |
 | В HTTP API | статус, без паролей |
 | Идентификатор контейнера | поле `containerName`, label `deployer.containerName` |

@@ -259,6 +259,45 @@
         "security": []
       }
     },
+    "/api/vault": {
+      "get": {
+        "summary": "List vault secret keys (session only; values never returned)",
+        "responses": {
+          "200": { "description": "{ ok, keys: [{ key, set }] }" },
+          "403": { "description": "Web session required" }
+        }
+      }
+    },
+    "/api/vault/{key}": {
+      "put": {
+        "summary": "Set vault secret (session only)",
+        "parameters": [{ "name": "key", "in": "path", "required": true, "schema": { "type": "string" } }],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": { "value": { "type": "string" } },
+                "required": ["value"]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": { "description": "{ ok, key, set }" },
+          "400": { "description": "Invalid key" },
+          "403": { "description": "Web session required" }
+        }
+      },
+      "delete": {
+        "summary": "Delete vault secret key (session only)",
+        "parameters": [{ "name": "key", "in": "path", "required": true, "schema": { "type": "string" } }],
+        "responses": {
+          "200": { "description": "{ ok, key, deleted }" },
+          "403": { "description": "Web session required" }
+        }
+      }
+    },
     "/api/templates": {
       "get": {
         "summary": "List templates",

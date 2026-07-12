@@ -91,6 +91,7 @@ describe('Deployer MCP', () => {
     assert.ok(names.includes('deployer_capabilities'));
     assert.ok(names.includes('deployer_deploy'));
     assert.ok(!names.includes('deployer_mcp_key_list'));
+    assert.ok(!names.some((n) => n.includes('vault')));
     assert.strictEqual(names.length, 24);
   });
 

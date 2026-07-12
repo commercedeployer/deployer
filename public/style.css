@@ -179,7 +179,14 @@ body {
   padding: 20px;
   box-shadow: 0 1px 4px var(--shadow);
 }
-#mcp-panel > .muted {
+.section-vault .card {
+  background: var(--bg-card);
+  border-radius: 12px;
+  padding: 20px;
+  box-shadow: 0 1px 4px var(--shadow);
+}
+#mcp-panel > .muted,
+#vault-panel > .muted {
   margin: 0 0 10px;
 }
 .mcp-create-form {
@@ -272,6 +279,14 @@ body {
 .mcp-keys-table td:nth-child(2) {
   min-width: 10rem;
 }
+#vault-panel .btn-danger {
+  color: var(--danger);
+  border-color: var(--danger);
+}
+#vault-panel .btn-danger:hover {
+  background: var(--danger-bg);
+  color: var(--danger);
+}
 .mcp-key-modal-input {
   width: 100%;
   font-family: ui-monospace, monospace;
@@ -283,6 +298,91 @@ body {
   background: var(--bg-card);
   color: var(--text);
   box-sizing: border-box;
+}
+
+.vault-create-form {
+  margin: 12px 0 0;
+}
+.vault-create-field-label {
+  display: block;
+  margin: 0 0 4px;
+  font-size: 0.9rem;
+  font-weight: 500;
+  color: var(--text-muted-2);
+  line-height: 1.25;
+}
+.vault-create-row {
+  display: flex;
+  flex-wrap: nowrap;
+  gap: 12px;
+  align-items: center;
+  max-width: 680px;
+}
+.vault-key-input,
+.vault-value-input {
+  height: 44px;
+  margin: 0;
+  padding: 0 12px;
+  border: 1px solid var(--input-border);
+  border-radius: 8px;
+  font-size: 1rem;
+  background: var(--bg-card);
+  color: var(--text);
+  box-sizing: border-box;
+}
+.vault-key-input {
+  flex: 0 0 200px;
+  min-width: 140px;
+  font-family: ui-monospace, monospace;
+  font-size: 0.9rem;
+}
+.vault-value-input {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+.vault-key-input:focus,
+.vault-value-input:focus {
+  outline: none;
+  border-color: var(--accent);
+}
+.vault-key-input:read-only {
+  opacity: 0.85;
+  cursor: default;
+}
+.vault-create-submit {
+  flex: 0 0 auto;
+  white-space: nowrap;
+  height: 44px;
+  min-height: 44px;
+  max-height: 44px;
+  margin: 0;
+  padding: 0 18px;
+  line-height: 1;
+  box-sizing: border-box;
+}
+#vault-keys-wrap {
+  margin-top: 16px;
+  padding-top: 16px;
+  border-top: 1px solid var(--border, rgba(128, 128, 128, 0.25));
+}
+.vault-key-empty {
+  margin-left: 8px;
+  font-size: 0.85rem;
+  color: var(--text-muted);
+  font-style: normal;
+}
+@media (max-width: 680px) {
+  .vault-create-row {
+    flex-wrap: wrap;
+    max-width: none;
+  }
+  .vault-key-input,
+  .vault-value-input {
+    flex: 1 1 100%;
+  }
+  .vault-create-submit {
+    width: 100%;
+  }
 }
 .mcp-url-line code { word-break: break-all; }
 .form label { display: block; margin-bottom: 16px; }

@@ -867,6 +867,7 @@ if (containersSearchInput) {
 bindContainersPager();
 
 window.addEventListener('deployer-lang-changed', () => {
+  if (window.deployerVault) window.deployerVault.load();
   if (window.deployerMcpKeys) window.deployerMcpKeys.load();
   loadTemplates();
   loadContainers();
@@ -885,6 +886,7 @@ window.addEventListener('deployer-lang-changed', () => {
     return;
   }
   hideModal();
+  if (window.deployerVault) await window.deployerVault.load();
   if (window.deployerMcpKeys) await window.deployerMcpKeys.load();
   await loadTemplates();
   await loadContainers();

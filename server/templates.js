@@ -10,6 +10,7 @@ const { normalizeRestartPolicy, normalizeRestartMaxRetries } = require('./restar
 const { normalizeVolumeEntry } = require('./volumes');
 const { normalizeNetworkEntry } = require('./networks');
 const { deployHostContext } = require('./hostContext');
+const { resolveVaultValue } = require('./secretsStore');
 
 const TEMPLATES_DIR = process.env.TEMPLATES_DIR || path.join(__dirname, '..', 'templates');
 // Bundled templates live inside the image. During migration we keep backward compatibility:
@@ -224,6 +225,8 @@ function substitute(str, params, context = {}) {
     if (Object.prototype.hasOwnProperty.call(context, trimmed)) {
       return context[trimmed] != null ? String(context[trimmed]) : '';
     }
+    const vaultVal = resolveVaultValue(trimmed);
+    if (vaultVal !== null) return vaultVal;
     return null;
   };
   const resolveToken = (rawKey) => {
