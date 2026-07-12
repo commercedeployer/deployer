@@ -49,6 +49,17 @@ const { listVaultKeys, setVaultSecret, deleteVaultSecret } = require('./secretsS
 const { createMcpServer } = require('./mcp/server');
 const { createMcpKeyRoutes } = require('./routes/mcpKeyRoutes');
 
+function normalizeDeployLabels(raw) {
+  if (!raw || typeof raw !== 'object' || Array.isArray(raw)) return undefined;
+  const out = {};
+  for (const [key, value] of Object.entries(raw)) {
+    const k = String(key || '').trim();
+    if (!k || value == null) continue;
+    out[k] = String(value).slice(0, 256);
+  }
+  return Object.keys(out).length ? out : undefined;
+}
+
 const SYNC_LEGACY = String(process.env.DEPLOYER_SYNC_LEGACY || '0').trim() === '1';
 
 function acceptOperation(res, op) {
@@ -299,6 +310,7 @@ app.post('/api/deploy', requireDeployAuth, deployLimiter, async (req, res) => {
     return res.status(404).json({ error: 'Template not found' });
   }
   const paramsCopy = body.params && typeof body.params === 'object' ? { ...body.params } : {};
+  const deployLabels = normalizeDeployLabels(body.labels);
   const ctx = deployContext();
   const genCache = createGenCache();
   const ctxWithName = { ...ctx, containerName, genCache };
@@ -318,6 +330,7 @@ app.post('/api/deploy', requireDeployAuth, deployLimiter, async (req, res) => {
         template,
         containerName,
         params: paramsCopy,
+        deployLabels,
         onPhase: () => {},
       });
       return res.json({ ok: true, container: result.container, params: result.params });
@@ -336,6 +349,7 @@ app.post('/api/deploy', requireDeployAuth, deployLimiter, async (req, res) => {
           template,
           containerName,
           params: paramsCopy,
+          deployLabels,
           onPhase,
         }),
     });

@@ -68,7 +68,25 @@
             "type": "object",
             "additionalProperties": true,
             "description": "Template form fields (HOST_PORT, DOMAIN, …). Excludes container name."
+          },
+          "labels": {
+            "type": "object",
+            "additionalProperties": { "type": "string" },
+            "description": "Extra Docker labels merged at create (e.g. commerce.id from Commerce)."
           }
+        }
+      },
+      "ContainerListItem": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string" },
+          "name": { "type": "string" },
+          "image": { "type": "string" },
+          "state": { "type": "string" },
+          "deployName": { "type": "string" },
+          "templateId": { "type": "string" },
+          "commerceId": { "type": "string", "description": "Value of commerce.id label if set" },
+          "labels": { "type": "object", "additionalProperties": { "type": "string" } }
         }
       },
       "TemplatePort": {

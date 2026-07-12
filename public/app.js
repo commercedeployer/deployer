@@ -51,7 +51,8 @@ function showModal(template, fields) {
     const label = document.createElement('label');
     label.innerHTML = `<span>${escapeHtml(f.label || key)}</span>`;
     const input = document.createElement('input');
-    input.type = 'text';
+    const fieldType = String(f.type || 'text').toLowerCase();
+    input.type = fieldType === 'password' ? 'password' : 'text';
     input.name = key;
     input.placeholder = f.default ? String(f.default) : '';
     input.autocomplete = 'off';
@@ -61,6 +62,9 @@ function showModal(template, fields) {
   });
   form.dataset.templateId = template.id;
   form._valueInputs = values;
+  if (window.DeployerPasswordToggle && typeof window.DeployerPasswordToggle.scan === 'function') {
+    window.DeployerPasswordToggle.scan(fieldsEl);
+  }
   overlay.hidden = false;
 }
 

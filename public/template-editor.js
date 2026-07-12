@@ -214,11 +214,15 @@ function addRow(containerId, config) {
 
 function collectFields() {
   const rows = document.querySelectorAll('#fields-list .repeat-row');
-  return Array.from(rows).map((row) => ({
-    key: row.querySelector('[data-key="key"]')?.value?.trim() || '',
-    label: row.querySelector('[data-key="label"]')?.value?.trim() || '',
-    default: row.querySelector('[data-key="default"]')?.value?.trim() || '',
-  })).filter((f) => f.key);
+  return Array.from(rows).map((row) => {
+    const key = row.querySelector('[data-key="key"]')?.value?.trim() || '';
+    const label = row.querySelector('[data-key="label"]')?.value?.trim() || '';
+    const def = row.querySelector('[data-key="default"]')?.value?.trim() || '';
+    const type = row.querySelector('[data-key="type"]')?.value === 'password' ? 'password' : '';
+    const out = { key, label, default: def };
+    if (type) out.type = type;
+    return out;
+  }).filter((f) => f.key);
 }
 
 function collectEnv() {
@@ -593,9 +597,14 @@ function addFieldRow(data = {}) {
   const row = document.createElement('div');
   row.className = 'repeat-row repeat-row-field';
   const keyVal = sanitizeFieldKeyInput(data.key || '');
+  const fieldType = data.type === 'password' ? 'password' : 'text';
   row.innerHTML = `
     <input type="text" data-key="key" data-i18n-placeholder="ph_field_key" placeholder="${escapeAttr(t('ph_field_key'))}" value="${escapeAttr(keyVal)}" autocomplete="off" spellcheck="false" data-i18n-aria-label="ph_field_key_aria" aria-label="${escapeAttr(t('ph_field_key_aria'))}">
     <input type="text" data-key="default" data-i18n-placeholder="ph_field_default" placeholder="${escapeAttr(t('ph_field_default'))}" value="${escapeAttr(data.default || '')}" data-i18n-aria-label="ph_field_default_aria" aria-label="${escapeAttr(t('ph_field_default_aria'))}">
+    <select data-key="type" data-i18n-aria-label="field_type_aria" aria-label="${escapeAttr(t('field_type_aria'))}">
+      <option value="text"${fieldType === 'text' ? ' selected' : ''}>${escapeAttr(t('field_type_text'))}</option>
+      <option value="password"${fieldType === 'password' ? ' selected' : ''}>${escapeAttr(t('field_type_password'))}</option>
+    </select>
     <input type="text" data-key="label" data-i18n-placeholder="ph_field_label" placeholder="${escapeAttr(t('ph_field_label'))}" value="${escapeAttr(data.label || '')}" data-i18n-aria-label="ph_field_label_aria" aria-label="${escapeAttr(t('ph_field_label_aria'))}">
     <button type="button" class="btn btn-outline btn-remove" data-i18n="action_remove">${escapeAttr(t('action_remove'))}</button>
   `;

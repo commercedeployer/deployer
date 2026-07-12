@@ -223,6 +223,13 @@ async function createAndStart(spec, hooks = {}) {
   if (deployName) createOpts.Labels[INSTANCE_LABEL] = deployName;
   const templateId = typeof hooks.templateId === 'string' ? hooks.templateId.trim() : '';
   if (templateId) createOpts.Labels[TEMPLATE_LABEL] = templateId;
+  if (hooks.extraLabels && typeof hooks.extraLabels === 'object' && !Array.isArray(hooks.extraLabels)) {
+    for (const [key, value] of Object.entries(hooks.extraLabels)) {
+      const k = String(key || '').trim();
+      if (!k || value == null) continue;
+      createOpts.Labels[k] = String(value);
+    }
+  }
 
   function portProtocol(p) {
     const proto = String(p.protocol || 'tcp').trim().toLowerCase();
@@ -317,6 +324,8 @@ async function listContainers(all = false) {
     state: c.State,
     deployName: (c.Labels || {})[INSTANCE_LABEL] || '',
     templateId: (c.Labels || {})[TEMPLATE_LABEL] || '',
+    commerceId: (c.Labels || {})['commerce.id'] || '',
+    labels: c.Labels || {},
   }));
 }
 

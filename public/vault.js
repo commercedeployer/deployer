@@ -164,6 +164,9 @@
         '</div>';
 
       if (window.deployerI18n) window.deployerI18n.apply(panel);
+      if (window.DeployerPasswordToggle && typeof window.DeployerPasswordToggle.scan === 'function') {
+        window.DeployerPasswordToggle.scan(panel);
+      }
 
       var form = document.getElementById('vault-save-form');
       if (form) {

@@ -2,6 +2,13 @@
 
 Format based on [Keep a Changelog](https://keepachangelog.com/).
 
+## [2.1.2] — 2026-07-12
+
+### Added
+
+- Deploy API: optional `labels` on `POST /api/deploy` — merged into Docker labels at `create` (Commerce sends `commerce.id`).
+- Container list: `commerceId` field (value of `commerce.id` label) plus full `labels` map.
+
 ## [2.1.1] — 2026-07-12
 
 ### Fixed

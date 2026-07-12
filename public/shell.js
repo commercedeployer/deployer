@@ -1,4 +1,13 @@
 (function () {
+  (function loadPasswordToggle() {
+    if (document.querySelector('script[data-deployer-password-toggle]')) return;
+    var s = document.createElement('script');
+    s.src = 'password-toggle.js';
+    s.defer = true;
+    s.setAttribute('data-deployer-password-toggle', '1');
+    document.head.appendChild(s);
+  })();
+
   function getEffectiveLang() {
     if (window.deployerI18n && typeof window.deployerI18n.getLang === 'function') {
       return window.deployerI18n.getLang();

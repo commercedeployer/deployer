@@ -17,7 +17,7 @@ function deployContext() {
   return { deployBasePath: process.env.DEPLOY_BASE_PATH || '/opt/deploy-data' };
 }
 
-async function executeDeploy({ template, containerName, params, onPhase }) {
+async function executeDeploy({ template, containerName, params, deployLabels, onPhase }) {
   const ctx = deployContext();
   const genCache = createGenCache();
   const ctxWithName = { ...ctx, containerName, genCache };
@@ -39,6 +39,7 @@ async function executeDeploy({ template, containerName, params, onPhase }) {
     onPhase,
     deployName: slotKey,
     templateId: template.id,
+    extraLabels: deployLabels,
   });
   if (template.postStart) {
     onPhase?.('post_start', 'Running post-start');
