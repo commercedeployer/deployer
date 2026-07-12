@@ -324,7 +324,7 @@ async function listContainers(all = false) {
     state: c.State,
     deployName: (c.Labels || {})[INSTANCE_LABEL] || '',
     templateId: (c.Labels || {})[TEMPLATE_LABEL] || '',
-    commerceId: (c.Labels || {})['commerce.id'] || '',
+    commerce: (c.Labels || {}).commerce || '',
     labels: c.Labels || {},
   }));
 }

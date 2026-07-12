@@ -2,6 +2,14 @@
 
 Format based on [Keep a Changelog](https://keepachangelog.com/).
 
+## [Unreleased]
+
+## [2.1.3] — 2026-07-12
+
+### Changed
+
+- Container list: field `commerce` (Docker label key `commerce`, value = Commerce public base URL); replaces `commerceId` / `commerce.id`.
+
 ## [2.1.2] — 2026-07-12
 
 ### Added

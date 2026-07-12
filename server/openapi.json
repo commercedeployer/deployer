@@ -72,7 +72,7 @@
           "labels": {
             "type": "object",
             "additionalProperties": { "type": "string" },
-            "description": "Extra Docker labels merged at create (e.g. commerce.id from Commerce)."
+            "description": "Extra Docker labels merged at create (e.g. commerce from Commerce public base URL)."
           }
         }
       },
@@ -85,7 +85,7 @@
           "state": { "type": "string" },
           "deployName": { "type": "string" },
           "templateId": { "type": "string" },
-          "commerceId": { "type": "string", "description": "Value of commerce.id label if set" },
+          "commerce": { "type": "string", "description": "Value of commerce label (= Commerce COMMERCE_PUBLIC_BASE_URL) if set" },
           "labels": { "type": "object", "additionalProperties": { "type": "string" } }
         }
       },
