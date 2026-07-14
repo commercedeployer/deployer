@@ -72,6 +72,8 @@ describe('Deployer MCP', () => {
     assert.strictEqual(res.status, 200);
     assert.strictEqual(res.body.result.protocolVersion, '2025-06-18');
     assert.ok(res.headers['mcp-session-id']);
+    assert.ok(res.body.result.instructions);
+    assert.match(res.body.result.instructions, /Deployer MCP/);
   });
 
   it('MCP tools/list returns all deployer tools', async () => {

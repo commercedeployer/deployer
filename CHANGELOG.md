@@ -4,6 +4,12 @@ Format based on [Keep a Changelog](https://keepachangelog.com/).
 
 ## [Unreleased]
 
+## [2.1.4] — 2026-07-14
+
+### Added
+
+- MCP `initialize.instructions`: agent playbook from `DEPLOYER-MCP-AGENT-RU.md` (Cursor and other clients show server instructions on connect).
+
 ## [2.1.3] — 2026-07-12
 
 ### Changed

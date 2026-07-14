@@ -4,6 +4,7 @@ const rateLimit = require('express-rate-limit');
 const { createMcpKeyAuth } = require('./mcpAuth');
 const { createAllTools } = require('./toolRegistry');
 const { createPromptRegistry, createResourceRegistry } = require('./resources');
+const { loadServerInstructions } = require('./instructions');
 const { createMcpConcurrencyGate } = require('./concurrencyGate');
 const { mcpConfig } = require('./mcpKeyService');
 const {
@@ -145,6 +146,7 @@ function createMcpServer() {
               resources: { subscribe: false, listChanged: false },
             },
             serverInfo: { name: 'deployer-mcp', version: require('../../package.json').version },
+            instructions: loadServerInstructions(),
           }),
         );
       }
